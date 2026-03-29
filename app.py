@@ -1,0 +1,114 @@
+"""
+Invoxa — AI-powered Expense Invoice Productivity Agent
+Main Streamlit entry point.
+
+Run locally:  streamlit run app.py
+"""
+
+from __future__ import annotations
+
+import streamlit as st
+
+from auth.firebase_auth import is_authenticated, render_login_page
+from utils.session import init_session
+
+# ---------------------------------------------------------------------------
+# Page configuration (must be first Streamlit call)
+# ---------------------------------------------------------------------------
+
+st.set_page_config(
+    page_title="Invoxa — Expense Agent",
+    page_icon="🧾",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
+
+# ---------------------------------------------------------------------------
+# Session state initialisation
+# ---------------------------------------------------------------------------
+
+init_session()
+
+# ---------------------------------------------------------------------------
+# Auth gate
+# ---------------------------------------------------------------------------
+
+if not is_authenticated():
+    render_login_page()
+    st.stop()
+
+# ---------------------------------------------------------------------------
+# Navigation
+# ---------------------------------------------------------------------------
+
+PAGE_ICONS = {
+    "Dashboard":       "🏠",
+    "Upload Invoice":  "⬆️",
+    "Monthly Report":  "📊",
+    "Chat":            "💬",
+    "Settings":        "⚙️",
+}
+
+PAGE_NAMES = list(PAGE_ICONS.keys())
+
+# Handle quick-action nav targets from dashboard buttons
+if "nav_target" in st.session_state:
+    target = st.session_state.pop("nav_target")
+    if target in PAGE_NAMES:
+        st.session_state["current_page"] = target
+
+# Default to Dashboard on first load
+if "current_page" not in st.session_state:
+    st.session_state["current_page"] = "Dashboard"
+
+with st.sidebar:
+    st.markdown("## 🧾 Invoxa")
+    st.markdown("---")
+
+    current = st.session_state.get("current_page", "Dashboard")
+    selected_page = st.radio(
+        "Navigation",
+        PAGE_NAMES,
+        index=PAGE_NAMES.index(current),
+        format_func=lambda x: f"{PAGE_ICONS[x]}  {x}",
+        label_visibility="collapsed",
+    )
+    st.session_state["current_page"] = selected_page
+
+    st.markdown("---")
+
+    # Compact user card in sidebar
+    user = st.session_state.get("user", {})
+    if user.get("photoURL"):
+        col_p, col_n = st.sidebar.columns([1, 3])
+        with col_p:
+            st.image(user["photoURL"], width=36)
+        with col_n:
+            st.caption(user.get("displayName", ""))
+            st.caption(user.get("email", ""))
+    else:
+        st.sidebar.caption(user.get("email", ""))
+
+# ---------------------------------------------------------------------------
+# Render selected page
+# ---------------------------------------------------------------------------
+
+if selected_page == "Dashboard":
+    from pages.dashboard import render
+    render()
+
+elif selected_page == "Upload Invoice":
+    from pages.process_invoices import render
+    render()
+
+elif selected_page == "Monthly Report":
+    from pages.monthly_report import render
+    render()
+
+elif selected_page == "Chat":
+    from pages.chat import render
+    render()
+
+elif selected_page == "Settings":
+    from pages.settings import render
+    render()

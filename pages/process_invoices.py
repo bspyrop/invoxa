@@ -21,10 +21,10 @@ from typing import Any, Dict, Optional
 import streamlit as st
 
 from agent.graph import graph
-from services.firestore import delete_invoice
 from services.google_drive import delete_file, get_or_create_folder, upload_file
+from services.firestore import delete_invoice, save_categories
 from utils.helpers import current_month_year
-from utils.session import get_uid, get_user_categories
+from utils.session import get_uid, get_user_categories, set_user_categories
 
 # Session-state keys (all prefixed _inv_ to avoid collisions)
 _KEY_BYTES   = "_inv_bytes"
@@ -172,10 +172,14 @@ def _render_hitl(uid: str) -> None:
                 format="%.2f",
             )
         with c2:
-            categories = get_user_categories()
-            raw_cat  = invoice.get("category", categories[-1])
-            cat_idx  = categories.index(raw_cat) if raw_cat in categories else len(categories) - 1
-            category = st.selectbox("Category", categories, index=cat_idx)
+            categories    = get_user_categories()
+            options       = categories + ["+ Add new category…"]
+            raw_cat       = invoice.get("category", categories[-1])
+            cat_idx       = categories.index(raw_cat) if raw_cat in categories else 0
+            selected_cat  = st.selectbox("Category", options, index=cat_idx)
+            new_cat_input = ""
+            if selected_cat == "+ Add new category…":
+                new_cat_input = st.text_input("New category name", placeholder="e.g. Insurance")
             currency = st.text_input("Currency (ISO)", value=str(invoice.get("currency") or "EUR"), max_chars=3)
             tax      = st.number_input(
                 "Tax Amount",
@@ -196,6 +200,21 @@ def _render_hitl(uid: str) -> None:
         cancelled = col_no.form_submit_button("❌ Cancel & Discard", use_container_width=True)
 
     if confirmed:
+        # Resolve category — use new name if "add new" was selected
+        if selected_cat == "+ Add new category…":
+            final_category = new_cat_input.strip() or "Other"
+        else:
+            final_category = selected_cat
+
+        # Persist new category to Firestore + session if it's genuinely new
+        if final_category and final_category not in get_user_categories():
+            updated_cats = get_user_categories() + [final_category]
+            try:
+                save_categories(uid, updated_cats)
+                set_user_categories(updated_cats)
+            except Exception:
+                pass  # non-fatal — category still used for this invoice
+
         month, year = _infer_month_year(inv_date)
         edited_invoice = {
             **invoice,
@@ -204,7 +223,7 @@ def _render_hitl(uid: str) -> None:
             "amount":        amount,
             "tax_amount":    tax,
             "currency":      currency.upper(),
-            "category":      category,
+            "category":      final_category,
             "description":   description,
             "month":         month,
             "year":          year,

@@ -304,6 +304,56 @@ def rename_and_move_file(
 
 
 # ---------------------------------------------------------------------------
+# File upload / delete
+# ---------------------------------------------------------------------------
+
+def upload_file(
+    creds: Credentials,
+    folder_id: str,
+    filename: str,
+    file_bytes: bytes,
+    mime_type: str,
+) -> str:
+    """
+    Upload a file to a Drive folder and return its file ID.
+
+    Args:
+        creds:      OAuth2 credentials.
+        folder_id:  ID of the destination folder.
+        filename:   Name to give the file in Drive.
+        file_bytes: Raw file content.
+        mime_type:  MIME type of the file.
+
+    Returns:
+        The new file's Drive ID.
+    """
+    service  = _drive_service(creds)
+    metadata = {"name": filename, "parents": [folder_id]}
+    media    = MediaIoBaseUpload(io.BytesIO(file_bytes), mimetype=mime_type, resumable=False)
+    try:
+        file_obj = service.files().create(body=metadata, media_body=media, fields="id").execute()
+        return file_obj["id"]
+    except HttpError as exc:
+        raise RuntimeError(f"Could not upload '{filename}': {exc}") from exc
+
+
+def delete_file(creds: Credentials, file_id: str) -> None:
+    """
+    Permanently delete a file from Drive.
+
+    Args:
+        creds:   OAuth2 credentials.
+        file_id: Drive file ID to delete.
+    """
+    service = _drive_service(creds)
+    try:
+        service.files().delete(fileId=file_id).execute()
+        logger.info("Deleted Drive file %s", file_id)
+    except HttpError as exc:
+        logger.error("delete_file('%s') failed: %s", file_id, exc)
+
+
+# ---------------------------------------------------------------------------
 # Duplicate detection
 # ---------------------------------------------------------------------------
 

@@ -1,41 +1,62 @@
 """
-Upload Invoice page — fully automatic pipeline.
+Upload Invoice page — full LangGraph pipeline with Human-in-the-Loop (HITL).
 
-  1. User selects / drags a file
-  2. GPT-4o extracts all invoice data
-  3. File is uploaded to Google Drive: Expenses/{Month YYYY}/{MeaningfulName}.ext
-  4. Data is saved to Firestore
-  5. Success messages shown — no buttons or forms required
+Flow:
+  1. User drops a PDF/image file.
+  2. File is uploaded to Google Drive (Expenses/ root, original name).
+  3. Graph runs (action="upload_invoice"):
+       extract_invoice_data  →  suggest_filename  →  INTERRUPT
+  4. HITL: user reviews / edits extracted data and filename, then confirms.
+  5. Graph resumes:
+       rename_and_organize  →  check_anomalies  →  END
+  6. Results and any anomaly warnings are displayed.
 """
 
 from __future__ import annotations
 
-import io
 import calendar
-from datetime import datetime, timezone
+import uuid
 from typing import Any, Dict, Optional
 
 import streamlit as st
-from openai import OpenAI
 
-from agent.nodes.extract_data     import _extract_from_file
-from agent.nodes.suggest_filename import _build_filename
-from services.firestore           import save_invoice
-from services.google_drive        import get_month_folder_id
-from utils.helpers                import CATEGORIES, current_month_year
-from utils.session                import get_uid
+from agent.graph import graph
+from services.firestore import delete_invoice
+from services.google_drive import delete_file, get_or_create_folder, upload_file
+from utils.helpers import CATEGORIES, current_month_year
+from utils.session import get_uid
 
-_KEY_FILENAME = "inv_filename"
-_KEY_BYTES    = "inv_bytes"
-_KEY_MIME     = "inv_mime"
-_KEY_RESULT   = "inv_result"   # dict with status, messages, data
+# Session-state keys (all prefixed _inv_ to avoid collisions)
+_KEY_BYTES   = "_inv_bytes"
+_KEY_MIME    = "_inv_mime"
+_KEY_FNAME   = "_inv_filename"
+_KEY_PHASE   = "_inv_phase"      # None | "hitl" | "done"
+_KEY_THREAD  = "_inv_thread"     # LangGraph thread_id
+_KEY_SNAP    = "_inv_snapshot"   # state dict returned by graph.invoke
+_KEY_DRIVEID = "_inv_drive_id"   # Drive file ID of the uploaded temp file
 
 
 def render() -> None:
-    uid = get_uid()
+    uid   = get_uid()
+    phase = st.session_state.get(_KEY_PHASE)
 
     st.title("⬆️ Upload Invoice")
-    st.caption("Drop a PDF or image — everything else is automatic.")
+
+    if phase is None:
+        _render_upload(uid)
+    elif phase == "hitl":
+        st.caption("Review the extracted data before saving.")
+        _render_hitl(uid)
+    elif phase == "done":
+        _render_done()
+
+
+# ---------------------------------------------------------------------------
+# Phase 1 — file uploader + Drive upload + graph invocation
+# ---------------------------------------------------------------------------
+
+def _render_upload(uid: str) -> None:
+    st.caption("Drop a PDF or image — the agent extracts, you review, then it organises automatically.")
 
     uploaded = st.file_uploader(
         "Select or drag-and-drop an invoice",
@@ -44,221 +65,238 @@ def render() -> None:
         key="inv_uploader",
     )
 
-    # New file selected → cache bytes and trigger pipeline
-    if uploaded is not None and st.session_state.get(_KEY_FILENAME) != uploaded.name:
-        st.session_state[_KEY_BYTES]    = uploaded.read()
-        st.session_state[_KEY_MIME]     = uploaded.type or "application/pdf"
-        st.session_state[_KEY_FILENAME] = uploaded.name
-        st.session_state.pop(_KEY_RESULT, None)
-
-    # No file yet
-    if not st.session_state.get(_KEY_BYTES):
+    if uploaded is None:
         return
 
-    filename  = st.session_state[_KEY_FILENAME]
-    mime_type = st.session_state[_KEY_MIME]
-    file_bytes = st.session_state[_KEY_BYTES]
+    # Skip if same file is re-rendered without a new selection
+    if st.session_state.get(_KEY_FNAME) == uploaded.name:
+        return
 
-    # Show preview
+    file_bytes = uploaded.read()
+    mime_type  = uploaded.type or "application/pdf"
+    filename   = uploaded.name
+
+    st.session_state[_KEY_BYTES] = file_bytes
+    st.session_state[_KEY_MIME]  = mime_type
+    st.session_state[_KEY_FNAME] = filename
+
     if mime_type.startswith("image/"):
         st.image(file_bytes, width=360, caption=filename)
     else:
-        st.markdown(f"📄 **{filename}** ({round(len(file_bytes)/1024, 1)} KB)")
+        st.markdown(f"📄 **{filename}** ({round(len(file_bytes) / 1024, 1)} KB)")
 
-    st.markdown("---")
+    # ── Step 1: Upload to Drive ────────────────────────────────────────────
+    with st.status("Uploading to Google Drive…", expanded=True) as status:
+        creds = st.session_state.get("google_credentials")
+        if not creds:
+            status.update(label="Not signed in", state="error")
+            st.error("Google credentials not found — please sign in again.")
+            return
 
-    # Already processed — just show results
-    if st.session_state.get(_KEY_RESULT):
-        _show_result(st.session_state[_KEY_RESULT])
-        if st.button("⬆️ Upload Another Invoice", use_container_width=True):
-            for k in (_KEY_BYTES, _KEY_MIME, _KEY_FILENAME, _KEY_RESULT):
-                st.session_state.pop(k, None)
-            st.rerun()
+        root_folder = st.session_state.get("expenses_root_folder", "Expenses")
+        try:
+            folder_id = get_or_create_folder(creds, root_folder)
+            drive_id  = upload_file(creds, folder_id, filename, file_bytes, mime_type)
+            st.session_state[_KEY_DRIVEID] = drive_id
+            status.update(label="Uploaded to Drive ✓", state="complete")
+        except Exception as exc:
+            status.update(label="Drive upload failed", state="error")
+            st.error(f"Could not upload to Drive: {exc}")
+            return
+
+    # ── Step 2: Run graph until HITL interrupt ─────────────────────────────
+    month, year = current_month_year()
+    thread_id   = str(uuid.uuid4())
+    config      = {"configurable": {"thread_id": thread_id}}
+
+    initial_state: Dict[str, Any] = {
+        "user_id":            uid,
+        "action":             "upload_invoice",
+        "month":              month,
+        "year":               year,
+        "invoices":           [{"id": drive_id, "name": filename, "mimeType": mime_type}],
+        "extracted_data":     [],
+        "current_file_index": 0,
+        "renamed_files":      [],
+        "anomaly_warnings":   [],
+        "error":              None,
+    }
+
+    with st.status("Extracting invoice data with GPT-4o…", expanded=True) as status:
+        try:
+            snapshot = graph.invoke(initial_state, config=config)
+            status.update(label="Extraction complete ✓", state="complete")
+        except Exception as exc:
+            status.update(label="Extraction failed", state="error")
+            st.error(f"Agent error during extraction: {exc}")
+            return
+
+    if snapshot.get("error"):
+        st.error(f"Extraction failed: {snapshot['error']}")
         return
 
-    # Run the pipeline
-    result = _run_pipeline(uid, file_bytes, mime_type, filename)
-    st.session_state[_KEY_RESULT] = result
-    _show_result(result)
+    st.session_state[_KEY_THREAD] = thread_id
+    st.session_state[_KEY_SNAP]   = snapshot
 
-    if st.button("⬆️ Upload Another Invoice", use_container_width=True):
-        for k in (_KEY_BYTES, _KEY_MIME, _KEY_FILENAME, _KEY_RESULT):
-            st.session_state.pop(k, None)
+    # pending_approval=True means suggest_filename ran and interrupted
+    if snapshot.get("pending_approval"):
+        st.session_state[_KEY_PHASE] = "hitl"
+    else:
+        st.session_state[_KEY_PHASE] = "done"
+
+    st.rerun()
+
+
+# ---------------------------------------------------------------------------
+# Phase 2 — HITL: review + confirm
+# ---------------------------------------------------------------------------
+
+def _render_hitl(uid: str) -> None:
+    snap      = st.session_state.get(_KEY_SNAP, {})
+    extracted = snap.get("extracted_data", [])
+    invoice   = extracted[0] if extracted else {}
+    suggested = snap.get("suggested_filename", "invoice.pdf")
+
+    st.subheader("📋 Review Extracted Data")
+
+    with st.form("hitl_review"):
+        c1, c2 = st.columns(2)
+        with c1:
+            supplier = st.text_input("Supplier", value=str(invoice.get("supplier_name") or ""))
+            inv_date = st.text_input("Invoice Date (YYYY-MM-DD)", value=str(invoice.get("invoice_date") or ""))
+            amount   = st.number_input(
+                "Amount",
+                value=float(invoice.get("amount") or 0),
+                min_value=0.0,
+                step=0.01,
+                format="%.2f",
+            )
+        with c2:
+            raw_cat  = invoice.get("category", "Other")
+            cat_idx  = CATEGORIES.index(raw_cat) if raw_cat in CATEGORIES else len(CATEGORIES) - 1
+            category = st.selectbox("Category", CATEGORIES, index=cat_idx)
+            currency = st.text_input("Currency (ISO)", value=str(invoice.get("currency") or "EUR"), max_chars=3)
+            tax      = st.number_input(
+                "Tax Amount",
+                value=float(invoice.get("tax_amount") or 0),
+                min_value=0.0,
+                step=0.01,
+                format="%.2f",
+            )
+
+        description = st.text_input("Description", value=str(invoice.get("description") or ""))
+
+        st.markdown("---")
+        st.caption("The file will be saved with this name inside the correct month folder.")
+        filename = st.text_input("📁 File Name", value=suggested)
+
+        col_yes, col_no = st.columns(2)
+        confirmed = col_yes.form_submit_button("✅ Confirm & Save", type="primary", use_container_width=True)
+        cancelled = col_no.form_submit_button("❌ Cancel & Discard", use_container_width=True)
+
+    if confirmed:
+        month, year = _infer_month_year(inv_date)
+        edited_invoice = {
+            **invoice,
+            "supplier_name": supplier,
+            "invoice_date":  inv_date,
+            "amount":        amount,
+            "tax_amount":    tax,
+            "currency":      currency.upper(),
+            "category":      category,
+            "description":   description,
+            "month":         month,
+            "year":          year,
+        }
+
+        thread_id = st.session_state[_KEY_THREAD]
+        config    = {"configurable": {"thread_id": thread_id}}
+
+        # Inject user edits into graph state, then resume
+        graph.update_state(config, {
+            "user_approved_data": edited_invoice,
+            "suggested_filename": filename,
+            "month":              month,
+            "year":               year,
+        })
+
+        with st.spinner("Organising in Google Drive and checking anomalies…"):
+            result = graph.invoke(None, config=config)
+
+        st.session_state[_KEY_SNAP]  = result
+        st.session_state[_KEY_PHASE] = "done"
+        st.rerun()
+
+    if cancelled:
+        # Remove the temp Drive file and Firestore record
+        drive_id = st.session_state.get(_KEY_DRIVEID)
+        creds    = st.session_state.get("google_credentials")
+        if drive_id and creds:
+            try:
+                delete_file(creds, drive_id)
+            except Exception:
+                pass
+        if drive_id:
+            try:
+                delete_invoice(uid, drive_id)
+            except Exception:
+                pass
+        _reset()
+        st.info("Upload cancelled. The file has been removed.")
         st.rerun()
 
 
 # ---------------------------------------------------------------------------
-# Pipeline
+# Phase 3 — done: results + anomaly warnings
 # ---------------------------------------------------------------------------
 
-def _run_pipeline(
-    uid: str,
-    file_bytes: bytes,
-    mime_type: str,
-    original_filename: str,
-) -> Dict[str, Any]:
-    """
-    Extract → build filename → upload to Drive → save to Firestore.
-    Returns a result dict with keys: success, steps (list of step dicts).
-    """
-    steps = []
+def _render_done() -> None:
+    snap     = st.session_state.get(_KEY_SNAP, {})
+    renamed  = snap.get("renamed_files", [])
+    warnings = snap.get("anomaly_warnings", [])
 
-    # ── Step 1: Extract ────────────────────────────────────────────────────
-    with st.status("Reading invoice with GPT-4o…", expanded=True) as status:
-        st.write("Analysing document…")
-        client = OpenAI(api_key=st.secrets.get("OPENAI_API_KEY", ""))
-        data   = _extract_from_file(client, file_bytes, mime_type, original_filename)
-
-        if data is None:
-            status.update(label="Extraction failed", state="error")
-            return {"success": False, "steps": [{"ok": False, "msg": "GPT-4o could not read this file. Make sure it is a clear invoice PDF or image."}]}
-
-        status.update(label="Data extracted ✓", state="complete")
-
-    steps.append({
-        "ok":  True,
-        "icon": "🧠",
-        "label": "Invoice data extracted",
-        "detail": (
-            f"Supplier: **{data.get('supplier_name', '—')}**  \n"
-            f"Date: **{data.get('invoice_date', '—')}**  \n"
-            f"Amount: **{data.get('amount', 0)} {data.get('currency', 'EUR')}**  \n"
-            f"Category: **{data.get('category', '—')}**  \n"
-            f"Description: {data.get('description', '—')}"
-        ),
-    })
-
-    # ── Step 2: Build filename & resolve folder ─────────────────────────────
-    month, year = _infer_month_year(data.get("invoice_date"))
-    final_name  = _build_filename(data, original_filename)  # type: ignore[arg-type]
-
-    # ── Step 3: Upload to Drive ─────────────────────────────────────────────
-    with st.status(f"Uploading to Google Drive…", expanded=True) as status:
-        st.write(f"Saving to **Expenses/{month} {year}/{final_name}**…")
-        drive_id, drive_path, drive_error = _upload_to_drive(
-            file_bytes, mime_type, final_name, month, year
-        )
-
-        if drive_id is None:
-            status.update(label="Drive upload failed", state="error")
-            steps.append({"ok": False, "icon": "☁️", "label": "Google Drive upload failed", "detail": drive_error})
-            return {"success": False, "steps": steps}
-
-        status.update(label="Uploaded to Drive ✓", state="complete")
-
-    steps.append({
-        "ok":    True,
-        "icon":  "☁️",
-        "label": "Saved to Google Drive",
-        "detail": f"📁 `{drive_path}`",
-    })
-
-    # ── Step 4: Save to Firestore ───────────────────────────────────────────
-    with st.status("Saving to Firestore…", expanded=True) as status:
-        invoice = {
-            **data,
-            "original_filename": original_filename,
-            "renamed_filename":  final_name,
-            "drive_file_id":     drive_id,
-            "month":             month,
-            "year":              year,
-            "processed_at":      datetime.now(timezone.utc).isoformat(),
-            "source":            "upload",
-        }
-        try:
-            save_invoice(uid, drive_id, invoice)
-            status.update(label="Firestore updated ✓", state="complete")
-        except Exception as exc:
-            status.update(label="Firestore save failed", state="error")
-            steps.append({"ok": False, "icon": "🔥", "label": "Firestore save failed", "detail": str(exc)})
-            return {"success": False, "steps": steps}
-
-    steps.append({
-        "ok":    True,
-        "icon":  "🔥",
-        "label": "Invoice data stored in Firestore",
-        "detail": (
-            f"Invoice number: **{data.get('invoice_number') or '—'}**  \n"
-            f"Tax amount: **{data.get('tax_amount', 0)} {data.get('currency', 'EUR')}**"
-        ),
-    })
-
-    return {"success": True, "steps": steps}
-
-
-# ---------------------------------------------------------------------------
-# Result display
-# ---------------------------------------------------------------------------
-
-def _show_result(result: Dict[str, Any]) -> None:
-    if result.get("success"):
-        st.success("✅ Invoice processed successfully!")
+    if renamed:
+        st.success("✅ Invoice processed and organised successfully!")
+        for r in renamed:
+            st.markdown(f"📁 `{r.get('new_name', '')}`")
     else:
-        st.error("❌ Processing failed — see details below.")
+        extracted = snap.get("extracted_data", [])
+        if extracted:
+            inv = extracted[0]
+            st.success("✅ Invoice data saved.")
+            st.markdown(
+                f"**{inv.get('supplier_name', '—')}** · "
+                f"{inv.get('amount', 0)} {inv.get('currency', 'EUR')} · "
+                f"{inv.get('invoice_date', '—')}"
+            )
 
-    for step in result.get("steps", []):
-        icon  = step.get("icon", "•")
-        label = step.get("label", "")
-        detail = step.get("detail", "")
-        ok    = step.get("ok", True)
+    if warnings:
+        st.markdown("---")
+        st.subheader("⚠️ Anomaly Warnings")
+        for w in warnings:
+            wtype = w.get("type", "")
+            icon  = "🔴" if wtype == "duplicate" else "🟡"
+            st.warning(f"{icon} {w.get('message', '')}")
 
-        if ok:
-            with st.expander(f"{icon} {label}", expanded=True):
-                st.markdown(detail)
-        else:
-            st.error(f"{icon} {label}: {detail}")
+    st.markdown("---")
+    if st.button("⬆️ Upload Another Invoice", use_container_width=True):
+        _reset()
+        st.rerun()
 
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _upload_to_drive(
-    file_bytes: bytes,
-    mime_type: str,
-    filename: str,
-    month: str,
-    year: str,
-):
-    """
-    Upload to Expenses/{month year}/{filename}.
-    Returns (drive_id, full_path, error_message).
-    """
-    try:
-        from googleapiclient.discovery import build
-        from googleapiclient.http import MediaIoBaseUpload
-
-        creds = st.session_state.get("google_credentials")
-        if not creds:
-            return None, None, "Google credentials not found. Please sign in again."
-
-        root_folder = st.session_state.get("expenses_root_folder", "Expenses")
-        folder_id   = get_month_folder_id(
-            creds,
-            root_folder_name=root_folder,
-            month=month,
-            year=year,
-            create_if_missing=True,
-        )
-        if not folder_id:
-            return None, None, f"Could not create folder Expenses/{month} {year} in Drive."
-
-        service  = build("drive", "v3", credentials=creds, cache_discovery=False)
-        metadata = {"name": filename, "parents": [folder_id]}
-        media    = MediaIoBaseUpload(io.BytesIO(file_bytes), mimetype=mime_type, resumable=False)
-        file_obj = service.files().create(body=metadata, media_body=media, fields="id").execute()
-        drive_id = file_obj.get("id")
-        full_path = f"{root_folder}/{month} {year}/{filename}"
-        return drive_id, full_path, None
-
-    except Exception as exc:
-        return None, None, str(exc)
+def _reset() -> None:
+    for k in (_KEY_BYTES, _KEY_MIME, _KEY_FNAME, _KEY_PHASE, _KEY_THREAD, _KEY_SNAP, _KEY_DRIVEID):
+        st.session_state.pop(k, None)
 
 
-def _infer_month_year(invoice_date: Optional[str]):
-    if invoice_date:
+def _infer_month_year(inv_date: Optional[str]):
+    if inv_date:
         try:
-            parts = invoice_date.split("-")
+            parts = inv_date.split("-")
             return calendar.month_name[int(parts[1])], parts[0]
         except Exception:
             pass

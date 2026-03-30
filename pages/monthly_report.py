@@ -7,11 +7,13 @@ month/year, with charts and an "Open in Google Sheets" button.
 
 from __future__ import annotations
 
+import uuid
+
 import streamlit as st
 import pandas as pd
 
-from agent.nodes.generate_report import generate_report as _generate_report_node
-from services.firestore          import get_invoices_for_month, get_invoices_for_year
+from agent.graph    import graph
+from services.firestore import get_invoices_for_month, get_invoices_for_year
 from utils.helpers               import (
     MONTHS,
     compute_monthly_stats,
@@ -170,15 +172,16 @@ def render() -> None:
 # ---------------------------------------------------------------------------
 
 def _do_generate(uid: str, month: str, year: str) -> None:
-    """Invoke the generate_report LangGraph node."""
-    state = {
+    """Invoke the generate_report node via the LangGraph compiled graph."""
+    config = {"configurable": {"thread_id": str(uuid.uuid4())}}
+    state  = {
         "user_id": uid,
         "month":   month,
         "year":    year,
         "action":  "generate_report",
     }
     with st.spinner("Generating Google Sheets report…"):
-        result = _generate_report_node(state)  # type: ignore[arg-type]
+        result = graph.invoke(state, config=config)
 
     error = result.get("error")
     if error:

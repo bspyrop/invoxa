@@ -7,10 +7,12 @@ and source attribution for each answer.
 
 from __future__ import annotations
 
+import uuid
+
 import streamlit as st
 
-from agent.nodes.chat  import chat_with_expenses
-from utils.session     import (
+from agent.graph import graph
+from utils.session import (
     append_chat_message,
     clear_chat_history,
     get_chat_history,
@@ -69,15 +71,15 @@ def render() -> None:
 
 def _run_chat(uid: str, query: str) -> None:
     """
-    Run the chat node for the given query and update the UI.
+    Run the chat action via the LangGraph compiled graph.
 
     Args:
         uid:   Firebase UID.
         query: User's question text.
     """
     history = get_chat_history()
-
-    state = {
+    config  = {"configurable": {"thread_id": str(uuid.uuid4())}}
+    state   = {
         "user_id":      uid,
         "user_query":   query,
         "chat_history": history,
@@ -89,12 +91,11 @@ def _run_chat(uid: str, query: str) -> None:
 
     with st.chat_message("assistant"):
         with st.spinner("Thinking…"):
-            result = chat_with_expenses(state)  # type: ignore[arg-type]
+            result = graph.invoke(state, config=config)
 
         answer = result.get("agent_response", "Sorry, I could not answer that.")
         st.markdown(answer)
 
-    # Persist updated history to session state
     new_history = result.get("chat_history", history)
     st.session_state["chat_history"] = new_history
 

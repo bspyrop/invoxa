@@ -37,9 +37,15 @@ logger = logging.getLogger(__name__)
 
 def route_action(
     state: AgentState,
-) -> Literal["list_invoices", "generate_report", "chat_with_expenses"]:
+) -> Literal["list_invoices", "extract_invoice_data", "generate_report", "chat_with_expenses"]:
     """
     Inspect state["action"] and route to the appropriate first node.
+
+    Actions:
+      "process_invoices" → list_invoices → extract_invoice_data → ...
+      "upload_invoice"   → extract_invoice_data (file already in Drive, skip listing)
+      "generate_report"  → generate_report
+      "chat"             → chat_with_expenses
 
     Args:
         state: Current graph state.
@@ -50,6 +56,8 @@ def route_action(
     action = state.get("action", "chat")
     if action == "process_invoices":
         return "list_invoices"
+    if action == "upload_invoice":
+        return "extract_invoice_data"
     if action == "generate_report":
         return "generate_report"
     return "chat_with_expenses"

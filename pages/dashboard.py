@@ -101,25 +101,26 @@ def render() -> None:
         pending_delete = st.session_state.get("_pending_delete_id")
 
         for idx, inv in enumerate(recent):
-            supplier  = inv.get("supplier_name", "Unknown")
-            amount    = inv.get("amount", 0)
-            currency  = inv.get("currency", "EUR")
-            inv_date  = inv.get("invoice_date", "")
-            category  = inv.get("category", "Other")
-            month_inv = inv.get("month", "")
-            year_inv  = inv.get("year", "")
-            inv_id    = inv.get("_doc_id") or inv.get("drive_file_id") or str(idx)
+            try:
+                supplier  = str(inv.get("supplier_name", "Unknown"))
+                amount    = inv.get("amount", 0)
+                currency  = inv.get("currency", "EUR")
+                inv_date  = str(inv.get("invoice_date", ""))
+                category  = inv.get("category", "Other")
+                month_inv = inv.get("month", "")
+                year_inv  = inv.get("year", "")
+                inv_id    = inv.get("_doc_id") or inv.get("drive_file_id") or str(idx)
 
-            st.markdown(f"**{supplier}** — {category}")
-            st.caption(f"{inv_date}  ·  {month_inv} {year_inv}  ·  **{format_amount(float(amount or 0), currency)}**")
-
-            renamed = inv.get("renamed_filename", "")
-            if renamed:
-                st.caption(f"✅ {renamed[:40]}")
-
-            if st.button(f"Delete this invoice", key=f"del_{idx}", use_container_width=False):
-                st.session_state["_pending_delete_id"] = inv_id
-                st.rerun()
+                st.write(f"**{supplier}** — {category} — {format_amount(float(amount or 0), currency)}")
+                st.caption(f"{inv_date} · {month_inv} {year_inv}")
+                renamed = inv.get("renamed_filename", "")
+                if renamed:
+                    st.caption(f"✅ {renamed[:40]}")
+                if st.button(f"Delete — {supplier} ({inv_date})", key=f"del_{idx}"):
+                    st.session_state["_pending_delete_id"] = inv_id
+                    st.rerun()
+            except Exception as _ex:
+                st.error(f"Row {idx} error: {_ex}")
 
             if pending_delete and pending_delete == inv_id:
                 st.warning(f"Delete **{supplier}** ({inv_date})? This only removes it from Invoxa — the Drive file is kept.")

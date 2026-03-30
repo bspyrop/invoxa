@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import streamlit as st
 
-from services.firestore import get_invoices_for_month, get_recent_invoices
+from services.firestore import delete_invoice, get_invoices_for_month, get_recent_invoices
 from utils.helpers import MONTHS, compute_monthly_stats, current_month_year, format_amount, year_range
 from utils.session import get_uid
 
@@ -90,29 +90,52 @@ def render() -> None:
     st.subheader("Recent Activity")
     try:
         recent = get_recent_invoices(uid, limit=5)
-    except Exception:
+    except Exception as _e:
+        st.error(f"Could not load recent invoices: {_e}")
         recent = []
 
     if not recent:
         st.info("No invoices processed yet. Click **Process New Invoices** to get started.")
     else:
-        for inv in recent:
-            supplier = inv.get("supplier_name", "Unknown")
-            amount   = inv.get("amount", 0)
-            currency = inv.get("currency", "EUR")
-            date     = inv.get("invoice_date", "")
-            category = inv.get("category", "Other")
+        # Confirm-delete state: store the invoice_id pending confirmation
+        pending_delete = st.session_state.get("_pending_delete_id")
+
+        for idx, inv in enumerate(recent):
+            supplier  = inv.get("supplier_name", "Unknown")
+            amount    = inv.get("amount", 0)
+            currency  = inv.get("currency", "EUR")
+            inv_date  = inv.get("invoice_date", "")
+            category  = inv.get("category", "Other")
             month_inv = inv.get("month", "")
             year_inv  = inv.get("year", "")
-            with st.container():
-                c1, c2, c3 = st.columns([4, 2, 2])
-                with c1:
-                    st.markdown(f"**{supplier}** — {category}")
-                    st.caption(f"{date}  ·  {month_inv} {year_inv}")
-                with c2:
-                    st.markdown(f"**{format_amount(float(amount or 0), currency)}**")
-                with c3:
-                    renamed = inv.get("renamed_filename", "")
-                    if renamed:
-                        st.caption(f"✅ {renamed[:30]}")
-                st.divider()
+            inv_id    = inv.get("_doc_id") or inv.get("drive_file_id") or str(idx)
+
+            st.markdown(f"**{supplier}** — {category}")
+            st.caption(f"{inv_date}  ·  {month_inv} {year_inv}  ·  **{format_amount(float(amount or 0), currency)}**")
+
+            renamed = inv.get("renamed_filename", "")
+            if renamed:
+                st.caption(f"✅ {renamed[:40]}")
+
+            if st.button(f"Delete this invoice", key=f"del_{idx}", use_container_width=False):
+                st.session_state["_pending_delete_id"] = inv_id
+                st.rerun()
+
+            if pending_delete and pending_delete == inv_id:
+                st.warning(f"Delete **{supplier}** ({inv_date})? This only removes it from Invoxa — the Drive file is kept.")
+                col_yes, col_no = st.columns(2)
+                with col_yes:
+                    if st.button("Yes, delete", key=f"confirm_{idx}", type="primary"):
+                        try:
+                            delete_invoice(uid, inv_id)
+                            st.session_state.pop("_pending_delete_id", None)
+                            st.success("Invoice removed.")
+                            st.rerun()
+                        except Exception as exc:
+                            st.error(f"Delete failed: {exc}")
+                with col_no:
+                    if st.button("Cancel", key=f"cancel_{idx}"):
+                        st.session_state.pop("_pending_delete_id", None)
+                        st.rerun()
+
+            st.divider()

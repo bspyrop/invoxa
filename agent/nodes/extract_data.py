@@ -138,12 +138,12 @@ def _call_openai_extraction(client: OpenAI, image_b64: str, mime_type: str) -> D
 
 def _call_openai_text_extraction(client: OpenAI, text: str) -> Dict[str, Any]:
     """Call GPT-4o with plain text (for PDFs where image conversion is unavailable)."""
-    from agent.prompts.extraction_prompt import EXTRACTION_SYSTEM_PROMPT
+    from agent.prompts.extraction_prompt import _build_system_prompt
 
     response = client.chat.completions.create(
         model=VISION_MODEL,
         messages=[
-            {"role": "system", "content": EXTRACTION_SYSTEM_PROMPT},
+            {"role": "system", "content": _build_system_prompt()},
             {"role": "user",   "content": f"Extract invoice data from this text:\n\n{text}"},
         ],
         max_tokens=800,

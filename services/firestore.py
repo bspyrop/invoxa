@@ -147,8 +147,18 @@ def get_invoices_for_year(uid: str, year: str) -> List[Dict[str, Any]]:
         return []
 
 
+def delete_invoice(uid: str, invoice_id: str) -> None:
+    """Delete a single invoice document from Firestore."""
+    try:
+        _db().collection("users").document(uid).collection("invoices").document(invoice_id).delete()
+        logger.info("Deleted invoice %s for user %s", invoice_id, uid)
+    except Exception as exc:
+        logger.error("delete_invoice(%s, %s) failed: %s", uid, invoice_id, exc)
+        raise
+
+
 def get_recent_invoices(uid: str, limit: int = 5) -> List[Dict[str, Any]]:
-    """Return the most recently processed invoices."""
+    """Return the most recently processed invoices, with _doc_id injected."""
     try:
         docs = (
             _db()
@@ -159,7 +169,12 @@ def get_recent_invoices(uid: str, limit: int = 5) -> List[Dict[str, Any]]:
             .limit(limit)
             .stream()
         )
-        return [d.to_dict() for d in docs]
+        results = []
+        for d in docs:
+            row = d.to_dict()
+            row["_doc_id"] = d.id  # always available regardless of stored fields
+            results.append(row)
+        return results
     except Exception as exc:
         logger.error("get_recent_invoices(%s) failed: %s", uid, exc)
         return []

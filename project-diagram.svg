@@ -1,7 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 1100" font-family="'Segoe UI', system-ui, Arial, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 1200" font-family="'Segoe UI', system-ui, Arial, sans-serif">
 
   <!-- Background -->
-  <rect width="1400" height="1100" fill="#0f1117" rx="0"/>
+  <rect width="1500" height="1200" fill="#0f1117"/>
   <defs>
     <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
       <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e2130" stroke-width="0.5"/>
@@ -27,368 +27,379 @@
     <marker id="arrow-red" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
       <polygon points="0 0, 8 3, 0 6" fill="#f87171"/>
     </marker>
-    <filter id="shadow" x="-5%" y="-5%" width="110%" height="120%">
+    <marker id="arrow-yellow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#fbbf24"/>
+    </marker>
+    <filter id="shadow">
       <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000" flood-opacity="0.5"/>
     </filter>
   </defs>
-  <rect width="1400" height="1100" fill="url(#grid)"/>
+  <rect width="1500" height="1200" fill="url(#grid)"/>
 
   <!-- Title -->
-  <text x="700" y="40" text-anchor="middle" font-size="26" font-weight="700" fill="#ffffff" letter-spacing="1">Invoxa — Project Architecture</text>
-  <text x="700" y="62" text-anchor="middle" font-size="13" fill="#6b7280">AI Expense Invoice Agent · Streamlit + LangGraph + GPT-4o + Firebase + Google Drive + Google Sheets</text>
-  <line x1="80" y1="74" x2="1320" y2="74" stroke="#1e2130" stroke-width="1.5"/>
+  <text x="750" y="40" text-anchor="middle" font-size="26" font-weight="700" fill="#ffffff" letter-spacing="1">Invoxa — Architecture (LangGraph with HITL)</text>
+  <text x="750" y="62" text-anchor="middle" font-size="13" fill="#6b7280">Streamlit + LangGraph (graph.invoke) + GPT-4o + Firebase + Google Drive + Google Sheets</text>
+  <line x1="60" y1="74" x2="1440" y2="74" stroke="#1e2130" stroke-width="1.5"/>
 
-  <!-- Layer labels (left side) -->
-  <rect x="12" y="88" width="18" height="120" rx="4" fill="#1d4ed8" opacity="0.7"/>
-  <text x="21" y="188" text-anchor="middle" font-size="10" font-weight="600" fill="#93c5fd" transform="rotate(-90,21,188)" letter-spacing="1">UI LAYER</text>
+  <!-- Layer labels -->
+  <rect x="12" y="84" width="18" height="116" rx="4" fill="#1d4ed8" opacity="0.7"/>
+  <text x="21" y="184" text-anchor="middle" font-size="10" font-weight="600" fill="#93c5fd" transform="rotate(-90,21,184)" letter-spacing="1">UI LAYER</text>
 
-  <rect x="12" y="228" width="18" height="80" rx="4" fill="#6d28d9" opacity="0.7"/>
-  <text x="21" y="288" text-anchor="middle" font-size="10" font-weight="600" fill="#c4b5fd" transform="rotate(-90,21,288)" letter-spacing="1">AUTH</text>
+  <rect x="12" y="220" width="18" height="64" rx="4" fill="#6d28d9" opacity="0.7"/>
+  <text x="21" y="272" text-anchor="middle" font-size="10" font-weight="600" fill="#c4b5fd" transform="rotate(-90,21,272)" letter-spacing="1">AUTH</text>
 
-  <rect x="12" y="328" width="18" height="260" rx="4" fill="#b45309" opacity="0.7"/>
-  <text x="21" y="468" text-anchor="middle" font-size="10" font-weight="600" fill="#fcd34d" transform="rotate(-90,21,468)" letter-spacing="1">AGENT LAYER</text>
+  <rect x="12" y="304" width="18" height="510" rx="4" fill="#b45309" opacity="0.7"/>
+  <text x="21" y="570" text-anchor="middle" font-size="10" font-weight="600" fill="#fcd34d" transform="rotate(-90,21,570)" letter-spacing="1">LANGGRAPH AGENT (graph.invoke)</text>
 
-  <rect x="12" y="608" width="18" height="200" rx="4" fill="#065f46" opacity="0.7"/>
-  <text x="21" y="718" text-anchor="middle" font-size="10" font-weight="600" fill="#6ee7b7" transform="rotate(-90,21,718)" letter-spacing="1">SERVICES LAYER</text>
+  <rect x="12" y="834" width="18" height="160" rx="4" fill="#065f46" opacity="0.7"/>
+  <text x="21" y="924" text-anchor="middle" font-size="10" font-weight="600" fill="#6ee7b7" transform="rotate(-90,21,924)" letter-spacing="1">SERVICES</text>
 
-  <rect x="12" y="828" width="18" height="200" rx="4" fill="#7f1d1d" opacity="0.7"/>
-  <text x="21" y="938" text-anchor="middle" font-size="10" font-weight="600" fill="#fca5a5" transform="rotate(-90,21,938)" letter-spacing="1">EXTERNAL APIs</text>
+  <rect x="12" y="1014" width="18" height="160" rx="4" fill="#7f1d1d" opacity="0.7"/>
+  <text x="21" y="1104" text-anchor="middle" font-size="10" font-weight="600" fill="#fca5a5" transform="rotate(-90,21,1104)" letter-spacing="1">EXTERNAL APIs</text>
 
-  <rect x="12" y="1048" width="18" height="36" rx="4" fill="#374151" opacity="0.7"/>
-  <text x="21" y="1076" text-anchor="middle" font-size="10" font-weight="600" fill="#9ca3af" transform="rotate(-90,21,1076)" letter-spacing="1">CFG</text>
+  <!-- ══════════════════════════════════════
+       ROW 1 — UI LAYER
+  ══════════════════════════════════════ -->
+  <rect x="40" y="84" width="1420" height="116" rx="12" fill="#1e3a5f" stroke="#4a9eff" stroke-width="2" filter="url(#shadow)"/>
+  <rect x="40" y="84" width="1420" height="28" rx="12" fill="#1d4ed8" opacity="0.5"/>
+  <rect x="40" y="100" width="1420" height="12" rx="0" fill="#1d4ed8" opacity="0.5"/>
+  <text x="750" y="104" text-anchor="middle" font-size="13" font-weight="700" fill="#bfdbfe">📱  app.py — Streamlit Entry Point + Navigation</text>
 
+  <!-- Page tiles -->
+  <rect x="56" y="120" width="200" height="70" rx="8" fill="#172554" stroke="#3b82f6" stroke-width="1.5"/>
+  <text x="156" y="139" text-anchor="middle" font-size="12" font-weight="700" fill="#93c5fd">🏠 Dashboard</text>
+  <text x="156" y="154" text-anchor="middle" font-size="10" fill="#6b7280">Stats · Quick actions</text>
+  <text x="156" y="168" text-anchor="middle" font-size="10" fill="#6b7280">Recent activity · Delete</text>
+  <text x="156" y="182" text-anchor="middle" font-size="10" fill="#4a9eff">No graph.invoke</text>
 
-  <!-- ═══════════════════════════════════════════
-       ROW 1 — UI LAYER  (y: 88–208)
-  ═══════════════════════════════════════════ -->
-  <rect x="50" y="88" width="1310" height="120" rx="12" fill="#1e3a5f" stroke="#4a9eff" stroke-width="2" filter="url(#shadow)"/>
-  <rect x="50" y="88" width="1310" height="30" rx="12" fill="#1d4ed8" opacity="0.5"/>
-  <rect x="50" y="106" width="1310" height="12" rx="0" fill="#1d4ed8" opacity="0.5"/>
-  <text x="705" y="110" text-anchor="middle" font-size="13" font-weight="700" fill="#bfdbfe">📱  app.py  —  Streamlit Entry Point  (navigation + auth gate)</text>
+  <rect x="272" y="120" width="220" height="70" rx="8" fill="#172554" stroke="#3b82f6" stroke-width="2"/>
+  <text x="382" y="139" text-anchor="middle" font-size="12" font-weight="700" fill="#93c5fd">⬆️ Upload Invoice</text>
+  <text x="382" y="154" text-anchor="middle" font-size="10" fill="#6b7280">Drop file → graph.invoke ×2</text>
+  <text x="382" y="168" text-anchor="middle" font-size="10" fill="#fbbf24">HITL review form</text>
+  <text x="382" y="182" text-anchor="middle" font-size="10" fill="#fbbf24">Pause · Edit · Resume</text>
 
-  <!-- Page boxes -->
-  <rect x="66" y="126" width="180" height="72" rx="8" fill="#172554" stroke="#3b82f6" stroke-width="1.5"/>
-  <text x="156" y="145" text-anchor="middle" font-size="12" font-weight="700" fill="#93c5fd">🏠 Dashboard</text>
-  <text x="156" y="161" text-anchor="middle" font-size="10" fill="#6b7280">Stats · Quick Actions</text>
-  <text x="156" y="175" text-anchor="middle" font-size="10" fill="#6b7280">Recent Activity · Delete</text>
-  <text x="156" y="189" text-anchor="middle" font-size="10" fill="#6b7280">Category Breakdown</text>
+  <rect x="508" y="120" width="220" height="70" rx="8" fill="#172554" stroke="#3b82f6" stroke-width="1.5"/>
+  <text x="618" y="139" text-anchor="middle" font-size="12" font-weight="700" fill="#93c5fd">📊 Monthly Report</text>
+  <text x="618" y="154" text-anchor="middle" font-size="10" fill="#6b7280">Select month/year</text>
+  <text x="618" y="168" text-anchor="middle" font-size="10" fill="#6b7280">graph.invoke (generate)</text>
+  <text x="618" y="182" text-anchor="middle" font-size="10" fill="#4a9eff">No HITL — straight through</text>
 
-  <rect x="262" y="126" width="190" height="72" rx="8" fill="#172554" stroke="#3b82f6" stroke-width="1.5"/>
-  <text x="357" y="145" text-anchor="middle" font-size="12" font-weight="700" fill="#93c5fd">⬆️ Upload Invoice</text>
-  <text x="357" y="161" text-anchor="middle" font-size="10" fill="#6b7280">Drag &amp; drop PDF / image</text>
-  <text x="357" y="175" text-anchor="middle" font-size="10" fill="#6b7280">Auto pipeline: extract →</text>
-  <text x="357" y="189" text-anchor="middle" font-size="10" fill="#6b7280">Drive → Firestore</text>
+  <rect x="744" y="120" width="200" height="70" rx="8" fill="#172554" stroke="#3b82f6" stroke-width="1.5"/>
+  <text x="844" y="139" text-anchor="middle" font-size="12" font-weight="700" fill="#93c5fd">💬 Chat</text>
+  <text x="844" y="154" text-anchor="middle" font-size="10" fill="#6b7280">Q&amp;A on expenses</text>
+  <text x="844" y="168" text-anchor="middle" font-size="10" fill="#6b7280">graph.invoke (chat)</text>
+  <text x="844" y="182" text-anchor="middle" font-size="10" fill="#4a9eff">No HITL — straight through</text>
 
-  <rect x="468" y="126" width="200" height="72" rx="8" fill="#172554" stroke="#3b82f6" stroke-width="1.5"/>
-  <text x="568" y="145" text-anchor="middle" font-size="12" font-weight="700" fill="#93c5fd">📊 Monthly Report</text>
-  <text x="568" y="161" text-anchor="middle" font-size="10" fill="#6b7280">Select month/year</text>
-  <text x="568" y="175" text-anchor="middle" font-size="10" fill="#6b7280">Generate Google Sheets</text>
-  <text x="568" y="189" text-anchor="middle" font-size="10" fill="#6b7280">report + year summary</text>
+  <rect x="960" y="120" width="175" height="70" rx="8" fill="#172554" stroke="#3b82f6" stroke-width="1.5"/>
+  <text x="1047" y="139" text-anchor="middle" font-size="12" font-weight="700" fill="#93c5fd">⚙️ Settings</text>
+  <text x="1047" y="154" text-anchor="middle" font-size="10" fill="#6b7280">Currency · folder name</text>
+  <text x="1047" y="168" text-anchor="middle" font-size="10" fill="#6b7280">Saved to Firestore</text>
+  <text x="1047" y="182" text-anchor="middle" font-size="10" fill="#4a9eff">No graph.invoke</text>
 
-  <rect x="684" y="126" width="180" height="72" rx="8" fill="#172554" stroke="#3b82f6" stroke-width="1.5"/>
-  <text x="774" y="145" text-anchor="middle" font-size="12" font-weight="700" fill="#93c5fd">💬 Chat</text>
-  <text x="774" y="161" text-anchor="middle" font-size="10" fill="#6b7280">AI Q&amp;A on expenses</text>
-  <text x="774" y="175" text-anchor="middle" font-size="10" fill="#6b7280">GPT-4o + Firestore</text>
-  <text x="774" y="189" text-anchor="middle" font-size="10" fill="#6b7280">invoice context</text>
+  <!-- Session state -->
+  <rect x="1155" y="84" width="298" height="116" rx="10" fill="#1a2035" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <text x="1304" y="106" text-anchor="middle" font-size="12" font-weight="700" fill="#93c5fd">Session State</text>
+  <text x="1163" y="122" font-size="10" fill="#6b7280">  google_credentials · user · uid</text>
+  <text x="1163" y="136" font-size="10" fill="#6b7280">  current_page · default_currency</text>
+  <text x="1163" y="150" font-size="10" fill="#6b7280">  expenses_root_folder · report_url</text>
+  <text x="1163" y="164" font-size="10" fill="#6b7280">  chat_history · _inv_phase</text>
+  <text x="1163" y="178" font-size="10" fill="#6b7280">  _inv_thread · _inv_snapshot</text>
 
-  <rect x="880" y="126" width="170" height="72" rx="8" fill="#172554" stroke="#3b82f6" stroke-width="1.5"/>
-  <text x="965" y="145" text-anchor="middle" font-size="12" font-weight="700" fill="#93c5fd">⚙️ Settings</text>
-  <text x="965" y="161" text-anchor="middle" font-size="10" fill="#6b7280">Currency · report name</text>
-  <text x="965" y="175" text-anchor="middle" font-size="10" fill="#6b7280">Expenses folder name</text>
-  <text x="965" y="189" text-anchor="middle" font-size="10" fill="#6b7280">Saved to Firestore</text>
+  <!-- ══════════════════════════════════════
+       ROW 2 — AUTH
+  ══════════════════════════════════════ -->
+  <rect x="40" y="220" width="700" height="64" rx="10" fill="#2d1f5e" stroke="#8b5cf6" stroke-width="2" filter="url(#shadow)"/>
+  <rect x="40" y="220" width="700" height="26" rx="10" fill="#6d28d9" opacity="0.5"/>
+  <rect x="40" y="236" width="700" height="10" rx="0" fill="#6d28d9" opacity="0.5"/>
+  <text x="390" y="239" text-anchor="middle" font-size="12" font-weight="700" fill="#ddd6fe">🔐  auth/firebase_auth.py</text>
+  <rect x="56" y="252" width="195" height="24" rx="5" fill="#1e1b4b" stroke="#7c3aed" stroke-width="1"/>
+  <text x="153" y="268" text-anchor="middle" font-size="10" fill="#c4b5fd">is_authenticated() — ID token verify</text>
+  <rect x="263" y="252" width="195" height="24" rx="5" fill="#1e1b4b" stroke="#7c3aed" stroke-width="1"/>
+  <text x="360" y="268" text-anchor="middle" font-size="10" fill="#c4b5fd">render_login_page() — Google OAuth2</text>
+  <rect x="470" y="252" width="255" height="24" rx="5" fill="#1e1b4b" stroke="#7c3aed" stroke-width="1"/>
+  <text x="597" y="268" text-anchor="middle" font-size="10" fill="#c4b5fd">Token exchange → google_credentials in session</text>
+  <line x1="390" y1="200" x2="390" y2="218" stroke="#8b5cf6" stroke-width="1.5" marker-end="url(#arrow-purple)"/>
 
-  <!-- Session State box -->
-  <rect x="1068" y="88" width="280" height="120" rx="10" fill="#1a2035" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="6,3"/>
-  <text x="1208" y="110" text-anchor="middle" font-size="12" font-weight="700" fill="#93c5fd">Session State</text>
-  <text x="1068" y="128" font-size="10" fill="#6b7280">  user · uid · google_credentials</text>
-  <text x="1068" y="143" font-size="10" fill="#6b7280">  current_page · default_currency</text>
-  <text x="1068" y="158" font-size="10" fill="#6b7280">  expenses_root_folder · report_name</text>
-  <text x="1068" y="173" font-size="10" fill="#6b7280">  inv_bytes · inv_result (upload cache)</text>
-  <text x="1068" y="188" font-size="10" fill="#6b7280">  _pending_delete_id</text>
+  <!-- ══════════════════════════════════════
+       ROW 3 — LANGGRAPH AGENT
+  ══════════════════════════════════════ -->
 
+  <!-- Outer agent box -->
+  <rect x="40" y="304" width="1420" height="510" rx="12" fill="#0d0b00" stroke="#d97706" stroke-width="2" filter="url(#shadow)"/>
+  <rect x="40" y="304" width="1420" height="28" rx="12" fill="#b45309" opacity="0.5"/>
+  <rect x="40" y="320" width="1420" height="12" rx="0" fill="#b45309" opacity="0.5"/>
+  <text x="750" y="323" text-anchor="middle" font-size="13" font-weight="700" fill="#fcd34d">🤖  agent/graph.py — CompiledStateGraph (MemorySaver checkpointer) — graph.invoke()</text>
 
-  <!-- ═══════════════════════════════════════════
-       ROW 2 — AUTH LAYER  (y: 228–308)
-  ═══════════════════════════════════════════ -->
-  <rect x="50" y="228" width="640" height="80" rx="10" fill="#2d1f5e" stroke="#8b5cf6" stroke-width="2" filter="url(#shadow)"/>
-  <rect x="50" y="228" width="640" height="28" rx="10" fill="#6d28d9" opacity="0.5"/>
-  <rect x="50" y="246" width="640" height="12" rx="0" fill="#6d28d9" opacity="0.5"/>
-  <text x="370" y="249" text-anchor="middle" font-size="13" font-weight="700" fill="#ddd6fe">🔐  auth/firebase_auth.py</text>
+  <!-- Route dispatcher -->
+  <rect x="620" y="342" width="260" height="74" rx="8" fill="#1c1a08" stroke="#ca8a04" stroke-width="2"/>
+  <text x="750" y="361" text-anchor="middle" font-size="12" font-weight="700" fill="#fde68a">route_action()</text>
+  <text x="750" y="376" text-anchor="middle" font-size="10" fill="#9ca3af">Reads state["action"]</text>
+  <text x="750" y="390" text-anchor="middle" font-size="10" fill="#fbbf24">upload_invoice · generate_report · chat</text>
+  <text x="750" y="404" text-anchor="middle" font-size="10" fill="#6b7280">( process_invoices path unused — no page calls it )</text>
 
-  <rect x="66" y="264" width="190" height="36" rx="6" fill="#1e1b4b" stroke="#7c3aed" stroke-width="1"/>
-  <text x="161" y="279" text-anchor="middle" font-size="10" font-weight="600" fill="#c4b5fd">is_authenticated()</text>
-  <text x="161" y="293" text-anchor="middle" font-size="9" fill="#6b7280">Firebase ID token verify</text>
+  <!-- START label -->
+  <rect x="686" y="314" width="128" height="20" rx="4" fill="#374151"/>
+  <text x="750" y="328" text-anchor="middle" font-size="10" fill="#9ca3af">START</text>
 
-  <rect x="272" y="264" width="190" height="36" rx="6" fill="#1e1b4b" stroke="#7c3aed" stroke-width="1"/>
-  <text x="367" y="279" text-anchor="middle" font-size="10" font-weight="600" fill="#c4b5fd">render_login_page()</text>
-  <text x="367" y="293" text-anchor="middle" font-size="9" fill="#6b7280">Google OAuth2 sign-in flow</text>
+  <!-- ─── PATH A: upload_invoice ─── -->
+  <rect x="56" y="448" width="1380" height="348" rx="10" fill="#0f0e04" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <text x="64" y="464" font-size="11" font-weight="700" fill="#fbbf24">action = "upload_invoice"  (Upload Invoice page)</text>
 
-  <rect x="478" y="264" width="196" height="36" rx="6" fill="#1e1b4b" stroke="#7c3aed" stroke-width="1"/>
-  <text x="576" y="279" text-anchor="middle" font-size="10" font-weight="600" fill="#c4b5fd">Token exchange</text>
-  <text x="576" y="293" text-anchor="middle" font-size="9" fill="#6b7280">Stores google_credentials in session</text>
+  <!-- Node: extract_invoice_data -->
+  <rect x="72" y="472" width="230" height="116" rx="8" fill="#1c1a08" stroke="#ca8a04" stroke-width="1.5"/>
+  <text x="187" y="491" text-anchor="middle" font-size="11" font-weight="700" fill="#fde68a">extract_invoice_data</text>
+  <line x1="82" y1="498" x2="292" y2="498" stroke="#374151" stroke-width="0.5"/>
+  <text x="187" y="511" text-anchor="middle" font-size="10" fill="#9ca3af">Downloads file from Drive</text>
+  <text x="187" y="524" text-anchor="middle" font-size="10" fill="#9ca3af">PyMuPDF → base64 JPEG</text>
+  <text x="187" y="537" text-anchor="middle" font-size="10" fill="#9ca3af">GPT-4o vision extraction</text>
+  <text x="187" y="550" text-anchor="middle" font-size="10" fill="#9ca3af">Date-aware prompt (today injected)</text>
+  <text x="187" y="563" text-anchor="middle" font-size="10" fill="#6b7280">Saves to Firestore</text>
+  <text x="187" y="577" text-anchor="middle" font-size="10" fill="#6b7280">→ extracted_data[ ]</text>
 
-  <!-- Arrow: auth → app -->
-  <line x1="370" y1="228" x2="370" y2="210" stroke="#8b5cf6" stroke-width="1.5" marker-end="url(#arrow-purple)"/>
+  <!-- Arrow extract → suggest -->
+  <line x1="302" y1="530" x2="330" y2="530" stroke="#d97706" stroke-width="1.5" marker-end="url(#arrow-orange)"/>
 
+  <!-- Node: suggest_filename -->
+  <rect x="330" y="472" width="210" height="116" rx="8" fill="#1c1a08" stroke="#ca8a04" stroke-width="1.5"/>
+  <text x="435" y="491" text-anchor="middle" font-size="11" font-weight="700" fill="#fde68a">suggest_filename</text>
+  <line x1="340" y1="498" x2="530" y2="498" stroke="#374151" stroke-width="0.5"/>
+  <text x="435" y="511" text-anchor="middle" font-size="10" fill="#9ca3af">Builds filename from fields:</text>
+  <text x="435" y="524" text-anchor="middle" font-size="10" fill="#9ca3af">Supplier_Cat_Date_Amt.ext</text>
+  <text x="435" y="537" text-anchor="middle" font-size="10" fill="#9ca3af">Sets pending_approval = True</text>
+  <text x="435" y="551" text-anchor="middle" font-size="10" fill="#fbbf24">→ INTERRUPT (HITL)</text>
+  <text x="435" y="565" text-anchor="middle" font-size="10" fill="#6b7280">graph pauses here</text>
 
-  <!-- ═══════════════════════════════════════════
-       ROW 3 — AGENT LAYER  (y: 328–588)
-  ═══════════════════════════════════════════ -->
-  <rect x="50" y="328" width="1310" height="260" rx="12" fill="#1c1308" stroke="#d97706" stroke-width="2" filter="url(#shadow)"/>
-  <rect x="50" y="328" width="1310" height="28" rx="12" fill="#b45309" opacity="0.5"/>
-  <rect x="50" y="346" width="1310" height="12" rx="0" fill="#b45309" opacity="0.5"/>
-  <text x="705" y="349" text-anchor="middle" font-size="13" font-weight="700" fill="#fcd34d">🤖  agent/  —  LangGraph Stateful Agent</text>
+  <!-- HITL interrupt box -->
+  <rect x="556" y="460" width="290" height="196" rx="8" fill="#1a1000" stroke="#fbbf24" stroke-width="2"/>
+  <rect x="556" y="460" width="290" height="24" rx="8" fill="#92400e" opacity="0.7"/>
+  <rect x="556" y="476" width="290" height="8" rx="0" fill="#92400e" opacity="0.7"/>
+  <text x="701" y="474" text-anchor="middle" font-size="11" font-weight="700" fill="#fde68a">⏸  HITL — Human in the Loop</text>
+  <text x="701" y="495" text-anchor="middle" font-size="10" fill="#fbbf24">graph.invoke() returns snapshot</text>
+  <text x="701" y="509" text-anchor="middle" font-size="10" fill="#9ca3af">Streamlit renders review form:</text>
+  <text x="701" y="522" text-anchor="middle" font-size="10" fill="#9ca3af">• Supplier · Date · Amount · Tax</text>
+  <text x="701" y="535" text-anchor="middle" font-size="10" fill="#9ca3af">• Category · Currency · Description</text>
+  <text x="701" y="548" text-anchor="middle" font-size="10" fill="#9ca3af">• Editable filename suggestion</text>
+  <text x="701" y="562" text-anchor="middle" font-size="10" fill="#4ecb71">✅ Confirm → graph.update_state()</text>
+  <text x="701" y="575" text-anchor="middle" font-size="10" fill="#4ecb71">         → graph.invoke(None) resumes</text>
+  <text x="701" y="589" text-anchor="middle" font-size="10" fill="#f87171">❌ Cancel → delete Drive file</text>
+  <text x="701" y="603" text-anchor="middle" font-size="10" fill="#f87171">         → delete Firestore record</text>
+  <text x="701" y="617" text-anchor="middle" font-size="10" fill="#f87171">         → reset session state</text>
+  <text x="701" y="631" text-anchor="middle" font-size="10" fill="#6b7280">thread_id preserved across both calls</text>
+  <text x="701" y="645" text-anchor="middle" font-size="10" fill="#6b7280">MemorySaver restores checkpoint</text>
 
-  <!-- graph.py box -->
-  <rect x="66" y="364" width="240" height="96" rx="8" fill="#1c1a08" stroke="#ca8a04" stroke-width="1.5"/>
-  <text x="186" y="382" text-anchor="middle" font-size="11" font-weight="700" fill="#fde68a">agent/graph.py</text>
-  <text x="186" y="398" text-anchor="middle" font-size="10" fill="#9ca3af">build_graph() → CompiledStateGraph</text>
-  <text x="186" y="412" text-anchor="middle" font-size="10" fill="#9ca3af">MemorySaver checkpointer (HITL)</text>
-  <text x="186" y="426" text-anchor="middle" font-size="10" fill="#9ca3af">route_action() dispatcher</text>
-  <text x="186" y="440" text-anchor="middle" font-size="10" fill="#6b7280">interrupt_before: rename_and_organize</text>
-  <text x="186" y="454" text-anchor="middle" font-size="10" fill="#6b7280">AgentState TypedDict</text>
+  <!-- Arrow suggest → HITL -->
+  <line x1="540" y1="530" x2="554" y2="530" stroke="#fbbf24" stroke-width="2" marker-end="url(#arrow-yellow)"/>
 
-  <!-- Prompts box -->
-  <rect x="66" y="470" width="240" height="100" rx="8" fill="#1c1a08" stroke="#ca8a04" stroke-width="1.5"/>
-  <text x="186" y="488" text-anchor="middle" font-size="11" font-weight="700" fill="#fde68a">agent/prompts/</text>
-  <text x="186" y="504" text-anchor="middle" font-size="10" fill="#c4b5fd">extraction_prompt.py</text>
-  <text x="186" y="518" text-anchor="middle" font-size="10" fill="#9ca3af">Injects today's date for year context</text>
-  <text x="186" y="532" text-anchor="middle" font-size="10" fill="#9ca3af">Vision + text-only variants</text>
-  <text x="186" y="548" text-anchor="middle" font-size="10" fill="#c4b5fd">chat_prompt.py</text>
-  <text x="186" y="562" text-anchor="middle" font-size="10" fill="#9ca3af">Expense Q&amp;A system prompt</text>
+  <!-- Arrow HITL → rename -->
+  <line x1="846" y1="558" x2="876" y2="558" stroke="#fbbf24" stroke-width="2" marker-end="url(#arrow-yellow)"/>
 
-  <!-- Nodes area -->
-  <rect x="326" y="364" width="1018" height="206" rx="8" fill="#141008" stroke="#92400e" stroke-width="1" stroke-dasharray="5,3"/>
-  <text x="835" y="382" text-anchor="middle" font-size="11" font-weight="600" fill="#d97706">agent/nodes/</text>
+  <!-- Node: rename_and_organize -->
+  <rect x="876" y="472" width="230" height="116" rx="8" fill="#1c1a08" stroke="#ca8a04" stroke-width="1.5"/>
+  <text x="991" y="491" text-anchor="middle" font-size="11" font-weight="700" fill="#fde68a">rename_and_organize</text>
+  <line x1="886" y1="498" x2="1096" y2="498" stroke="#374151" stroke-width="0.5"/>
+  <text x="991" y="511" text-anchor="middle" font-size="10" fill="#9ca3af">Applies user-edited data</text>
+  <text x="991" y="524" text-anchor="middle" font-size="10" fill="#9ca3af">Moves file → Expenses/Month/</text>
+  <text x="991" y="537" text-anchor="middle" font-size="10" fill="#9ca3af">Renames to approved filename</text>
+  <text x="991" y="550" text-anchor="middle" font-size="10" fill="#9ca3af">Updates Firestore record</text>
+  <text x="991" y="563" text-anchor="middle" font-size="10" fill="#6b7280">→ renamed_files[ ]</text>
 
-  <!-- Node boxes -->
-  <rect x="340" y="390" width="155" height="80" rx="6" fill="#1c1a08" stroke="#ca8a04" stroke-width="1.5"/>
-  <text x="417" y="407" text-anchor="middle" font-size="10" font-weight="700" fill="#fde68a">extract_invoice_data</text>
-  <text x="417" y="421" text-anchor="middle" font-size="9" fill="#9ca3af">Downloads from Drive</text>
-  <text x="417" y="434" text-anchor="middle" font-size="9" fill="#9ca3af">PyMuPDF → base64</text>
-  <text x="417" y="447" text-anchor="middle" font-size="9" fill="#9ca3af">GPT-4o vision extract</text>
-  <text x="417" y="460" text-anchor="middle" font-size="9" fill="#6b7280">→ saves to Firestore</text>
+  <!-- Arrow rename → check -->
+  <line x1="1106" y1="530" x2="1130" y2="530" stroke="#d97706" stroke-width="1.5" marker-end="url(#arrow-orange)"/>
 
-  <rect x="510" y="390" width="150" height="80" rx="6" fill="#1c1a08" stroke="#ca8a04" stroke-width="1.5"/>
-  <text x="585" y="407" text-anchor="middle" font-size="10" font-weight="700" fill="#fde68a">suggest_filename</text>
-  <text x="585" y="421" text-anchor="middle" font-size="9" fill="#9ca3af">Builds meaningful name</text>
-  <text x="585" y="434" text-anchor="middle" font-size="9" fill="#9ca3af">Supplier_Cat_Date_Amt</text>
-  <text x="585" y="447" text-anchor="middle" font-size="9" fill="#9ca3af">HITL interrupt point</text>
-  <text x="585" y="460" text-anchor="middle" font-size="9" fill="#6b7280">→ user confirms</text>
+  <!-- Node: check_anomalies -->
+  <rect x="1130" y="472" width="270" height="116" rx="8" fill="#1c1a08" stroke="#ca8a04" stroke-width="1.5"/>
+  <text x="1265" y="491" text-anchor="middle" font-size="11" font-weight="700" fill="#fde68a">check_anomalies</text>
+  <line x1="1140" y1="498" x2="1390" y2="498" stroke="#374151" stroke-width="0.5"/>
+  <text x="1265" y="511" text-anchor="middle" font-size="10" fill="#9ca3af">Loads all Firestore invoices</text>
+  <text x="1265" y="524" text-anchor="middle" font-size="10" fill="#9ca3af">Detects duplicates</text>
+  <text x="1265" y="537" text-anchor="middle" font-size="10" fill="#9ca3af">Flags unusual amounts (2× avg)</text>
+  <text x="1265" y="550" text-anchor="middle" font-size="10" fill="#9ca3af">Finds missing recurring suppliers</text>
+  <text x="1265" y="563" text-anchor="middle" font-size="10" fill="#6b7280">→ anomaly_warnings[ ] → END</text>
 
-  <rect x="675" y="390" width="155" height="80" rx="6" fill="#1c1a08" stroke="#ca8a04" stroke-width="1.5"/>
-  <text x="752" y="407" text-anchor="middle" font-size="10" font-weight="700" fill="#fde68a">rename_and_organize</text>
-  <text x="752" y="421" text-anchor="middle" font-size="9" fill="#9ca3af">Uploads to Drive</text>
-  <text x="752" y="434" text-anchor="middle" font-size="9" fill="#9ca3af">Expenses/Month/name</text>
-  <text x="752" y="447" text-anchor="middle" font-size="9" fill="#9ca3af">Creates folders if needed</text>
-  <text x="752" y="460" text-anchor="middle" font-size="9" fill="#6b7280">→ loop per invoice</text>
+  <!-- ─── PATH B: generate_report ─── -->
+  <rect x="56" y="608" width="500" height="88" rx="8" fill="#0a0f06" stroke="#22c55e" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <text x="64" y="624" font-size="11" font-weight="700" fill="#4ade80">action = "generate_report"  (Monthly Report page — straight through, no HITL)</text>
+  <rect x="72" y="630" width="460" height="58" rx="6" fill="#052e16" stroke="#16a34a" stroke-width="1.5"/>
+  <text x="302" y="649" text-anchor="middle" font-size="11" font-weight="700" fill="#4ade80">generate_report</text>
+  <text x="302" y="663" text-anchor="middle" font-size="10" fill="#9ca3af">Loads month + year invoices from Firestore</text>
+  <text x="302" y="677" text-anchor="middle" font-size="10" fill="#9ca3af">Writes Google Sheets tabs (month + year summary) · Moves sheet to Expenses folder → END</text>
 
-  <rect x="845" y="390" width="145" height="80" rx="6" fill="#1c1a08" stroke="#ca8a04" stroke-width="1.5"/>
-  <text x="917" y="407" text-anchor="middle" font-size="10" font-weight="700" fill="#fde68a">check_anomalies</text>
-  <text x="917" y="421" text-anchor="middle" font-size="9" fill="#9ca3af">Detect duplicates</text>
-  <text x="917" y="434" text-anchor="middle" font-size="9" fill="#9ca3af">Flag unusual amounts</text>
-  <text x="917" y="447" text-anchor="middle" font-size="9" fill="#9ca3af">Post-process warnings</text>
-  <text x="917" y="460" text-anchor="middle" font-size="9" fill="#6b7280">→ END</text>
+  <!-- ─── PATH C: chat ─── -->
+  <rect x="572" y="608" width="500" height="88" rx="8" fill="#0a0614" stroke="#8b5cf6" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <text x="580" y="624" font-size="11" font-weight="700" fill="#c4b5fd">action = "chat"  (Chat page — straight through, no HITL)</text>
+  <rect x="588" y="630" width="460" height="58" rx="6" fill="#2d1f5e" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="818" y="649" text-anchor="middle" font-size="11" font-weight="700" fill="#c4b5fd">chat_with_expenses</text>
+  <text x="818" y="663" text-anchor="middle" font-size="10" fill="#9ca3af">Loads all invoices + suppliers from Firestore (long-term memory)</text>
+  <text x="818" y="677" text-anchor="middle" font-size="10" fill="#9ca3af">GPT-4o-mini · chat_history last 20 turns (short-term) → agent_response → END</text>
 
-  <rect x="1005" y="390" width="155" height="80" rx="6" fill="#1c1a08" stroke="#ca8a04" stroke-width="1.5"/>
-  <text x="1082" y="407" text-anchor="middle" font-size="10" font-weight="700" fill="#fde68a">generate_report</text>
-  <text x="1082" y="421" text-anchor="middle" font-size="9" fill="#9ca3af">Loads Firestore data</text>
-  <text x="1082" y="434" text-anchor="middle" font-size="9" fill="#9ca3af">Writes Google Sheets</text>
-  <text x="1082" y="447" text-anchor="middle" font-size="9" fill="#9ca3af">Moves to Expenses folder</text>
-  <text x="1082" y="460" text-anchor="middle" font-size="9" fill="#6b7280">→ END</text>
+  <!-- ─── MEMORY sidebar inside agent ─── -->
+  <rect x="1088" y="608" width="354" height="186" rx="8" fill="#111827" stroke="#374151" stroke-width="1.5"/>
+  <text x="1265" y="628" text-anchor="middle" font-size="12" font-weight="700" fill="#d1d5db">🧠  Memory</text>
+  <line x1="1096" y1="634" x2="1434" y2="634" stroke="#374151" stroke-width="0.8"/>
+  <text x="1096" y="650" font-size="10" font-weight="600" fill="#fbbf24">Short-term (RAM / session)</text>
+  <text x="1096" y="664" font-size="10" fill="#6b7280">MemorySaver — graph checkpoint per thread_id</text>
+  <text x="1096" y="678" font-size="10" fill="#6b7280">st.session_state chat_history (last 20 turns)</text>
+  <text x="1096" y="692" font-size="10" fill="#6b7280">_inv_phase / _inv_snap (upload flow state)</text>
+  <line x1="1096" y1="700" x2="1434" y2="700" stroke="#374151" stroke-width="0.5" stroke-dasharray="4,2"/>
+  <text x="1096" y="715" font-size="10" font-weight="600" fill="#4ecb71">Long-term (Firestore)</text>
+  <text x="1096" y="729" font-size="10" fill="#6b7280">users/{uid}/invoices/{drive_id}</text>
+  <text x="1096" y="743" font-size="10" fill="#6b7280">users/{uid}/suppliers/{name}  ← upserted on save</text>
+  <text x="1096" y="757" font-size="10" fill="#6b7280">  total_spend · invoice_count · first/last_seen</text>
+  <text x="1096" y="771" font-size="10" fill="#6b7280">Injected into chat + anomaly context every run</text>
+  <text x="1096" y="785" font-size="10" fill="#6b7280">users/{uid}/logs  (errors + activity)</text>
 
-  <rect x="1175" y="390" width="155" height="80" rx="6" fill="#1c1a08" stroke="#ca8a04" stroke-width="1.5"/>
-  <text x="1252" y="407" text-anchor="middle" font-size="10" font-weight="700" fill="#fde68a">chat_with_expenses</text>
-  <text x="1252" y="421" text-anchor="middle" font-size="9" fill="#9ca3af">Loads all invoices</text>
-  <text x="1252" y="434" text-anchor="middle" font-size="9" fill="#9ca3af">GPT-4o conversation</text>
-  <text x="1252" y="447" text-anchor="middle" font-size="9" fill="#9ca3af">supplier memory context</text>
-  <text x="1252" y="460" text-anchor="middle" font-size="9" fill="#6b7280">→ END</text>
+  <!-- Path arrows from router -->
+  <line x1="700" y1="416" x2="300" y2="448" stroke="#fbbf24" stroke-width="1.5" marker-end="url(#arrow-yellow)"/>
+  <text x="440" y="440" font-size="9" fill="#fbbf24">upload_invoice</text>
+  <line x1="720" y1="416" x2="250" y2="608" stroke="#4ade80" stroke-width="1.5" marker-end="url(#arrow-green)"/>
+  <text x="350" y="540" font-size="9" fill="#4ade80">generate_report</text>
+  <line x1="770" y1="416" x2="760" y2="608" stroke="#a78bfa" stroke-width="1.5" marker-end="url(#arrow-purple)"/>
+  <text x="780" y="520" font-size="9" fill="#a78bfa">chat</text>
 
-  <!-- Node flow arrows -->
-  <line x1="465" y1="430" x2="508" y2="430" stroke="#d97706" stroke-width="1.5" marker-end="url(#arrow-orange)"/>
-  <line x1="660" y1="430" x2="673" y2="430" stroke="#d97706" stroke-width="1.5" marker-end="url(#arrow-orange)"/>
-  <line x1="830" y1="430" x2="843" y2="430" stroke="#d97706" stroke-width="1.5" marker-end="url(#arrow-orange)"/>
-  <line x1="990" y1="430" x2="1003" y2="430" stroke="#d97706" stroke-width="1.5" marker-end="url(#arrow-orange)"/>
+  <!-- Page → graph arrows -->
+  <line x1="382" y1="200" x2="382" y2="302" stroke="#fb923c" stroke-width="2" stroke-dasharray="4,3" marker-end="url(#arrow-orange)"/>
+  <line x1="618" y1="200" x2="618" y2="302" stroke="#fb923c" stroke-width="2" stroke-dasharray="4,3" marker-end="url(#arrow-orange)"/>
+  <line x1="844" y1="200" x2="790" y2="302" stroke="#fb923c" stroke-width="2" stroke-dasharray="4,3" marker-end="url(#arrow-orange)"/>
 
-  <!-- Route labels -->
-  <text x="400" y="485" text-anchor="middle" font-size="9" fill="#d97706">process_invoices →</text>
-  <text x="1082" y="485" text-anchor="middle" font-size="9" fill="#d97706">generate_report →</text>
-  <text x="1252" y="485" text-anchor="middle" font-size="9" fill="#d97706">chat →</text>
+  <!-- ══════════════════════════════════════
+       ROW 4 — SERVICES
+  ══════════════════════════════════════ -->
+  <rect x="40" y="834" width="460" height="150" rx="10" fill="#052e16" stroke="#16a34a" stroke-width="2" filter="url(#shadow)"/>
+  <rect x="40" y="834" width="460" height="26" rx="10" fill="#065f46" opacity="0.7"/>
+  <rect x="40" y="848" width="460" height="12" rx="0" fill="#065f46" opacity="0.7"/>
+  <text x="270" y="852" text-anchor="middle" font-size="12" font-weight="700" fill="#bbf7d0">🔥  services/firestore.py</text>
+  <text x="56" y="874" font-size="10" fill="#4ade80">save_invoice · delete_invoice · get_invoice</text>
+  <text x="56" y="888" font-size="10" fill="#6b7280">get_invoices_for_month · get_invoices_for_year</text>
+  <text x="56" y="902" font-size="10" fill="#6b7280">get_recent_invoices (injects _doc_id)</text>
+  <text x="56" y="916" font-size="10" fill="#4ade80">_update_supplier_memory() — upserted on every save</text>
+  <text x="56" y="930" font-size="10" fill="#6b7280">get_all_invoices · get_all_suppliers</text>
+  <text x="56" y="944" font-size="10" fill="#6b7280">log_activity · log_error</text>
+  <text x="56" y="958" font-size="10" fill="#6b7280">users/{uid}/invoices · suppliers · logs</text>
+  <text x="56" y="972" font-size="10" fill="#6b7280">Credentials via [firebase_admin] TOML section</text>
 
-  <!-- Arrow: pages → agent -->
-  <line x1="357" y1="208" x2="357" y2="326" stroke="#fb923c" stroke-width="1.5" marker-end="url(#arrow-orange)"/>
-  <line x1="568" y1="208" x2="650" y2="326" stroke="#fb923c" stroke-width="1.5" marker-end="url(#arrow-orange)"/>
-  <line x1="774" y1="208" x2="900" y2="326" stroke="#fb923c" stroke-width="1.5" marker-end="url(#arrow-orange)"/>
+  <rect x="516" y="834" width="460" height="150" rx="10" fill="#052e16" stroke="#16a34a" stroke-width="2" filter="url(#shadow)"/>
+  <rect x="516" y="834" width="460" height="26" rx="10" fill="#065f46" opacity="0.7"/>
+  <rect x="516" y="848" width="460" height="12" rx="0" fill="#065f46" opacity="0.7"/>
+  <text x="746" y="852" text-anchor="middle" font-size="12" font-weight="700" fill="#bbf7d0">☁️  services/google_drive.py</text>
+  <text x="532" y="874" font-size="10" fill="#4ade80">upload_file · delete_file · download_file</text>
+  <text x="532" y="888" font-size="10" fill="#6b7280">get_or_create_folder · find_folder · get_month_folder_id</text>
+  <text x="532" y="902" font-size="10" fill="#6b7280">list_invoices_in_folder</text>
+  <text x="532" y="916" font-size="10" fill="#4ade80">rename_and_move_file — atomic rename + move</text>
+  <text x="532" y="930" font-size="10" fill="#6b7280">Drive structure: Expenses/{Month YYYY}/{filename}.ext</text>
+  <text x="532" y="944" font-size="10" fill="#6b7280">@retry tenacity (HttpError, 3 attempts)</text>
 
+  <rect x="992" y="834" width="468" height="150" rx="10" fill="#052e16" stroke="#16a34a" stroke-width="2" filter="url(#shadow)"/>
+  <rect x="992" y="834" width="468" height="26" rx="10" fill="#065f46" opacity="0.7"/>
+  <rect x="992" y="848" width="468" height="12" rx="0" fill="#065f46" opacity="0.7"/>
+  <text x="1226" y="852" text-anchor="middle" font-size="12" font-weight="700" fill="#bbf7d0">📊  services/google_sheets.py</text>
+  <text x="1008" y="874" font-size="10" fill="#4ade80">get_or_create_spreadsheet · generate_monthly_report</text>
+  <text x="1008" y="888" font-size="10" fill="#6b7280">Writes invoice table + summary + category + supplier tabs</text>
+  <text x="1008" y="902" font-size="10" fill="#4ade80">generate_year_summary — cross-month totals</text>
+  <text x="1008" y="916" font-size="10" fill="#6b7280">remove_sheet1_if_present — clean blank tab</text>
+  <text x="1008" y="930" font-size="10" fill="#6b7280">format_header_row — bold blue header + auto-resize</text>
+  <text x="1008" y="944" font-size="10" fill="#6b7280">Spreadsheet saved inside Expenses/ folder in Drive</text>
+  <text x="1008" y="958" font-size="10" fill="#6b7280">@retry tenacity (HttpError, 3 attempts)</text>
 
-  <!-- ═══════════════════════════════════════════
-       ROW 4 — SERVICES LAYER  (y: 608–808)
-  ═══════════════════════════════════════════ -->
-  <rect x="50" y="608" width="420" height="190" rx="10" fill="#052e16" stroke="#16a34a" stroke-width="2" filter="url(#shadow)"/>
-  <rect x="50" y="608" width="420" height="28" rx="10" fill="#065f46" opacity="0.7"/>
-  <rect x="50" y="624" width="420" height="12" rx="0" fill="#065f46" opacity="0.7"/>
-  <text x="260" y="628" text-anchor="middle" font-size="12" font-weight="700" fill="#bbf7d0">🔥  services/firestore.py</text>
-  <text x="70" y="655" font-size="10" font-weight="600" fill="#4ade80">save_invoice · delete_invoice · get_invoice</text>
-  <text x="70" y="670" font-size="10" fill="#6b7280">get_invoices_for_month · get_invoices_for_year</text>
-  <text x="70" y="685" font-size="10" fill="#6b7280">get_recent_invoices (injects _doc_id)</text>
-  <text x="70" y="700" font-size="10" fill="#6b7280">get_all_invoices · get_all_suppliers</text>
-  <text x="70" y="715" font-size="10" font-weight="600" fill="#4ade80">_update_supplier_memory()</text>
-  <text x="70" y="730" font-size="10" fill="#6b7280">Upserts supplier totals on every save</text>
-  <text x="70" y="748" font-size="10" font-weight="600" fill="#4ade80">log_activity · log_error</text>
-  <text x="70" y="763" font-size="10" fill="#6b7280">Collection: users/{uid}/invoices/{drive_id}</text>
-  <text x="70" y="778" font-size="10" fill="#6b7280">Collection: users/{uid}/suppliers/{name}</text>
+  <!-- Arrows: agent → services -->
+  <line x1="187" y1="816" x2="187" y2="832" stroke="#16a34a" stroke-width="1.5" marker-end="url(#arrow-green)"/>
+  <line x1="991" y1="588" x2="700" y2="832" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrow-green)"/>
+  <line x1="1265" y1="588" x2="1200" y2="832" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrow-green)"/>
 
-  <rect x="490" y="608" width="420" height="190" rx="10" fill="#052e16" stroke="#16a34a" stroke-width="2" filter="url(#shadow)"/>
-  <rect x="490" y="608" width="420" height="28" rx="10" fill="#065f46" opacity="0.7"/>
-  <rect x="490" y="624" width="420" height="12" rx="0" fill="#065f46" opacity="0.7"/>
-  <text x="700" y="628" text-anchor="middle" font-size="12" font-weight="700" fill="#bbf7d0">☁️  services/google_drive.py</text>
-  <text x="510" y="655" font-size="10" font-weight="600" fill="#4ade80">get_or_create_folder · find_folder</text>
-  <text x="510" y="670" font-size="10" fill="#6b7280">Creates Expenses/ root folder</text>
-  <text x="510" y="685" font-size="10" font-weight="600" fill="#4ade80">get_month_folder_id()</text>
-  <text x="510" y="700" font-size="10" fill="#6b7280">Creates Expenses/{Month YYYY}/ subfolder</text>
-  <text x="510" y="715" font-size="10" font-weight="600" fill="#4ade80">upload_file · download_file</text>
-  <text x="510" y="730" font-size="10" fill="#6b7280">MediaIoBaseUpload — resumable=False</text>
-  <text x="510" y="748" font-size="10" font-weight="600" fill="#4ade80">list_files_in_folder</text>
-  <text x="510" y="763" font-size="10" fill="#6b7280">Drive v3 API · google-auth credentials</text>
-  <text x="510" y="778" font-size="10" fill="#6b7280">File path: Expenses/{Month YYYY}/{name}.ext</text>
+  <!-- ══════════════════════════════════════
+       ROW 5 — EXTERNAL APIs
+  ══════════════════════════════════════ -->
+  <rect x="40" y="1014" width="360" height="160" rx="10" fill="#1a0808" stroke="#dc2626" stroke-width="2" filter="url(#shadow)"/>
+  <rect x="40" y="1014" width="360" height="26" rx="10" fill="#7f1d1d" opacity="0.6"/>
+  <rect x="40" y="1028" width="360" height="10" rx="0" fill="#7f1d1d" opacity="0.6"/>
+  <text x="220" y="1031" text-anchor="middle" font-size="12" font-weight="700" fill="#fecaca">🧠  OpenAI API</text>
+  <text x="220" y="1053" text-anchor="middle" font-size="11" font-weight="600" fill="#f87171">GPT-4o (Vision) — extract_invoice_data</text>
+  <text x="220" y="1067" text-anchor="middle" font-size="10" fill="#6b7280">Invoice image → structured JSON</text>
+  <text x="220" y="1081" text-anchor="middle" font-size="10" fill="#6b7280">Today's date injected · temp=0 · max_tokens=800</text>
+  <text x="220" y="1098" text-anchor="middle" font-size="11" font-weight="600" fill="#f87171">GPT-4o-mini (Chat) — chat_with_expenses</text>
+  <text x="220" y="1112" text-anchor="middle" font-size="10" fill="#6b7280">All invoices + suppliers injected as context</text>
+  <text x="220" y="1126" text-anchor="middle" font-size="10" fill="#6b7280">temp=0.3 · max_tokens=1024 · last 20 turns</text>
+  <text x="220" y="1143" text-anchor="middle" font-size="10" fill="#6b7280">PDF: PyMuPDF (no poppler) → base64 JPEG</text>
+  <text x="220" y="1157" text-anchor="middle" font-size="10" fill="#6b7280">Fallback: PyPDF2 text → text-only prompt</text>
 
-  <rect x="930" y="608" width="430" height="190" rx="10" fill="#052e16" stroke="#16a34a" stroke-width="2" filter="url(#shadow)"/>
-  <rect x="930" y="608" width="430" height="28" rx="10" fill="#065f46" opacity="0.7"/>
-  <rect x="930" y="624" width="430" height="12" rx="0" fill="#065f46" opacity="0.7"/>
-  <text x="1145" y="628" text-anchor="middle" font-size="12" font-weight="700" fill="#bbf7d0">📊  services/google_sheets.py</text>
-  <text x="950" y="655" font-size="10" font-weight="600" fill="#4ade80">get_or_create_spreadsheet · find_spreadsheet</text>
-  <text x="950" y="670" font-size="10" fill="#6b7280">Searches Drive for "Expenses Report {year}"</text>
-  <text x="950" y="685" font-size="10" font-weight="600" fill="#4ade80">generate_monthly_report()</text>
-  <text x="950" y="700" font-size="10" fill="#6b7280">Clears/creates month tab · writes invoice table</text>
-  <text x="950" y="715" font-size="10" fill="#6b7280">Adds summary + category + supplier breakdowns</text>
-  <text x="950" y="730" font-size="10" font-weight="600" fill="#4ade80">generate_year_summary()</text>
-  <text x="950" y="745" font-size="10" fill="#6b7280">Month-by-month totals + annual breakdowns</text>
-  <text x="950" y="760" font-size="10" font-weight="600" fill="#4ade80">remove_sheet1_if_present · format_header_row</text>
-  <text x="950" y="775" font-size="10" fill="#6b7280">Bold blue header · auto-resize columns</text>
-  <text x="950" y="790" font-size="10" fill="#6b7280">@retry tenacity (HttpError, 3 attempts)</text>
+  <rect x="420" y="1014" width="380" height="160" rx="10" fill="#0a1628" stroke="#3b82f6" stroke-width="2" filter="url(#shadow)"/>
+  <rect x="420" y="1014" width="380" height="26" rx="10" fill="#1d4ed8" opacity="0.5"/>
+  <rect x="420" y="1028" width="380" height="10" rx="0" fill="#1d4ed8" opacity="0.5"/>
+  <text x="610" y="1031" text-anchor="middle" font-size="12" font-weight="700" fill="#bfdbfe">☁️  Google Drive API v3</text>
+  <text x="610" y="1053" text-anchor="middle" font-size="10" fill="#6b7280">upload_file — initial upload (Expenses/ root)</text>
+  <text x="610" y="1067" text-anchor="middle" font-size="10" fill="#6b7280">rename_and_move_file — after HITL confirm</text>
+  <text x="610" y="1081" text-anchor="middle" font-size="10" fill="#6b7280">  → moves to Expenses/{Month YYYY}/{name}.ext</text>
+  <text x="610" y="1095" text-anchor="middle" font-size="10" fill="#6b7280">delete_file — on HITL cancel</text>
+  <text x="610" y="1109" text-anchor="middle" font-size="10" fill="#93c5fd">OAuth2: drive.file scope</text>
+  <text x="610" y="1123" text-anchor="middle" font-size="10" fill="#6b7280">files.create · update · delete · get · list</text>
 
-  <!-- Arrows: nodes → services -->
-  <line x1="417" y1="588" x2="200" y2="606" stroke="#16a34a" stroke-width="1.5" marker-end="url(#arrow-green)"/>
-  <line x1="752" y1="588" x2="650" y2="606" stroke="#16a34a" stroke-width="1.5" marker-end="url(#arrow-green)"/>
-  <line x1="1082" y1="588" x2="1100" y2="606" stroke="#16a34a" stroke-width="1.5" marker-end="url(#arrow-green)"/>
-  <line x1="1252" y1="588" x2="250" y2="606" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arrow-green)"/>
+  <rect x="820" y="1014" width="360" height="160" rx="10" fill="#0a1628" stroke="#22c55e" stroke-width="2" filter="url(#shadow)"/>
+  <rect x="820" y="1014" width="360" height="26" rx="10" fill="#15803d" opacity="0.5"/>
+  <rect x="820" y="1028" width="360" height="10" rx="0" fill="#15803d" opacity="0.5"/>
+  <text x="1000" y="1031" text-anchor="middle" font-size="12" font-weight="700" fill="#bbf7d0">📊  Google Sheets API v4</text>
+  <text x="1000" y="1053" text-anchor="middle" font-size="10" fill="#6b7280">Spreadsheet: "Expenses Report {year}"</text>
+  <text x="1000" y="1067" text-anchor="middle" font-size="10" fill="#6b7280">Tabs: {Month YYYY} · Year Summary</text>
+  <text x="1000" y="1081" text-anchor="middle" font-size="10" fill="#6b7280">Sheet1 removed after first real tab added</text>
+  <text x="1000" y="1095" text-anchor="middle" font-size="10" fill="#6b7280">Bold blue header · auto-resize columns</text>
+  <text x="1000" y="1109" text-anchor="middle" font-size="10" fill="#4ade80">OAuth2: spreadsheets scope</text>
+  <text x="1000" y="1123" text-anchor="middle" font-size="10" fill="#6b7280">batchUpdate · values.update (USER_ENTERED)</text>
 
-
-  <!-- ═══════════════════════════════════════════
-       ROW 5 — EXTERNAL APIs  (y: 828–1028)
-  ═══════════════════════════════════════════ -->
-  <rect x="50" y="828" width="300" height="190" rx="10" fill="#1a0808" stroke="#dc2626" stroke-width="2" filter="url(#shadow)"/>
-  <rect x="50" y="828" width="300" height="28" rx="10" fill="#7f1d1d" opacity="0.6"/>
-  <rect x="50" y="844" width="300" height="12" rx="0" fill="#7f1d1d" opacity="0.6"/>
-  <text x="200" y="848" text-anchor="middle" font-size="12" font-weight="700" fill="#fecaca">🧠  OpenAI API</text>
-  <text x="200" y="872" text-anchor="middle" font-size="11" font-weight="600" fill="#f87171">GPT-4o (Vision)</text>
-  <text x="200" y="887" text-anchor="middle" font-size="10" fill="#6b7280">Invoice image extraction</text>
-  <text x="200" y="901" text-anchor="middle" font-size="10" fill="#6b7280">Structured JSON output</text>
-  <text x="200" y="915" text-anchor="middle" font-size="10" fill="#6b7280">Today's date injected in prompt</text>
-  <text x="200" y="933" text-anchor="middle" font-size="11" font-weight="600" fill="#f87171">GPT-4o (Chat)</text>
-  <text x="200" y="948" text-anchor="middle" font-size="10" fill="#6b7280">Expense Q&amp;A with invoice context</text>
-  <text x="200" y="962" text-anchor="middle" font-size="10" fill="#6b7280">Supplier memory + all invoices</text>
-  <text x="200" y="980" text-anchor="middle" font-size="10" fill="#6b7280">max_tokens=800 · temperature=0</text>
-  <text x="200" y="1008" text-anchor="middle" font-size="9" fill="#6b7280">PDF fallback: PyMuPDF (no poppler)</text>
-
-  <rect x="370" y="828" width="300" height="190" rx="10" fill="#0a1628" stroke="#3b82f6" stroke-width="2" filter="url(#shadow)"/>
-  <rect x="370" y="828" width="300" height="28" rx="10" fill="#1d4ed8" opacity="0.5"/>
-  <rect x="370" y="844" width="300" height="12" rx="0" fill="#1d4ed8" opacity="0.5"/>
-  <text x="520" y="848" text-anchor="middle" font-size="12" font-weight="700" fill="#bfdbfe">☁️  Google Drive API v3</text>
-  <text x="520" y="872" text-anchor="middle" font-size="10" fill="#6b7280">Folder: Expenses/</text>
-  <text x="520" y="886" text-anchor="middle" font-size="10" fill="#6b7280">Subfolder: Expenses/{Month YYYY}/</text>
-  <text x="520" y="900" text-anchor="middle" font-size="10" fill="#6b7280">File: {Supplier}_{Cat}_{Date}_{Amt}.ext</text>
-  <text x="520" y="918" text-anchor="middle" font-size="10" fill="#93c5fd">OAuth2 Scopes:</text>
-  <text x="520" y="932" text-anchor="middle" font-size="10" fill="#6b7280">drive.file · drive.readonly</text>
-  <text x="520" y="950" text-anchor="middle" font-size="10" fill="#6b7280">files.create · files.update (move)</text>
-  <text x="520" y="964" text-anchor="middle" font-size="10" fill="#6b7280">files.get · files.list</text>
-  <text x="520" y="978" text-anchor="middle" font-size="10" fill="#6b7280">media download (exportLinks)</text>
-
-  <rect x="690" y="828" width="300" height="190" rx="10" fill="#0a1628" stroke="#22c55e" stroke-width="2" filter="url(#shadow)"/>
-  <rect x="690" y="828" width="300" height="28" rx="10" fill="#15803d" opacity="0.5"/>
-  <rect x="690" y="844" width="300" height="12" rx="0" fill="#15803d" opacity="0.5"/>
-  <text x="840" y="848" text-anchor="middle" font-size="12" font-weight="700" fill="#bbf7d0">📊  Google Sheets API v4</text>
-  <text x="840" y="872" text-anchor="middle" font-size="10" fill="#6b7280">Spreadsheet: "Expenses Report {year}"</text>
-  <text x="840" y="886" text-anchor="middle" font-size="10" fill="#6b7280">Tabs: {Month YYYY} + Year Summary</text>
-  <text x="840" y="900" text-anchor="middle" font-size="10" fill="#6b7280">Sheet1 removed after first real tab</text>
-  <text x="840" y="918" text-anchor="middle" font-size="10" fill="#4ade80">OAuth2 Scope: spreadsheets</text>
-  <text x="840" y="932" text-anchor="middle" font-size="10" fill="#6b7280">spreadsheets.create · batchUpdate</text>
-  <text x="840" y="946" text-anchor="middle" font-size="10" fill="#6b7280">values.update (USER_ENTERED)</text>
-  <text x="840" y="960" text-anchor="middle" font-size="10" fill="#6b7280">repeatCell (bold blue header)</text>
-  <text x="840" y="974" text-anchor="middle" font-size="10" fill="#6b7280">autoResizeDimensions</text>
-
-  <rect x="1010" y="828" width="350" height="190" rx="10" fill="#1a0a1a" stroke="#f472b6" stroke-width="2" filter="url(#shadow)"/>
-  <rect x="1010" y="828" width="350" height="28" rx="10" fill="#9d174d" opacity="0.5"/>
-  <rect x="1010" y="844" width="350" height="12" rx="0" fill="#9d174d" opacity="0.5"/>
-  <text x="1185" y="848" text-anchor="middle" font-size="12" font-weight="700" fill="#fbcfe8">🔥  Firebase / Firestore</text>
-  <text x="1185" y="872" text-anchor="middle" font-size="11" font-weight="600" fill="#f9a8d4">Firebase Auth</text>
-  <text x="1185" y="887" text-anchor="middle" font-size="10" fill="#6b7280">Google Identity Provider</text>
-  <text x="1185" y="901" text-anchor="middle" font-size="10" fill="#6b7280">ID token verification (Admin SDK)</text>
-  <text x="1185" y="919" text-anchor="middle" font-size="11" font-weight="600" fill="#f9a8d4">Firestore Data Model</text>
-  <text x="1185" y="934" text-anchor="middle" font-size="10" fill="#6b7280">users/{uid}/invoices/{drive_id}</text>
-  <text x="1185" y="948" text-anchor="middle" font-size="10" fill="#6b7280">users/{uid}/suppliers/{name}</text>
-  <text x="1185" y="962" text-anchor="middle" font-size="10" fill="#6b7280">users/{uid}/logs/{log_id}</text>
-  <text x="1185" y="978" text-anchor="middle" font-size="10" fill="#6b7280">users/{uid}  (profile / settings)</text>
-  <text x="1185" y="996" text-anchor="middle" font-size="9" fill="#6b7280">Credentials via [firebase_admin] TOML section</text>
+  <rect x="1200" y="1014" width="260" height="160" rx="10" fill="#1a0a1a" stroke="#f472b6" stroke-width="2" filter="url(#shadow)"/>
+  <rect x="1200" y="1014" width="260" height="26" rx="10" fill="#9d174d" opacity="0.5"/>
+  <rect x="1200" y="1028" width="260" height="10" rx="0" fill="#9d174d" opacity="0.5"/>
+  <text x="1330" y="1031" text-anchor="middle" font-size="12" font-weight="700" fill="#fbcfe8">🔥  Firebase</text>
+  <text x="1330" y="1053" text-anchor="middle" font-size="11" font-weight="600" fill="#f9a8d4">Firebase Auth</text>
+  <text x="1330" y="1067" text-anchor="middle" font-size="10" fill="#6b7280">Google Identity Provider</text>
+  <text x="1330" y="1081" text-anchor="middle" font-size="10" fill="#6b7280">ID token verify (Admin SDK)</text>
+  <text x="1330" y="1098" text-anchor="middle" font-size="11" font-weight="600" fill="#f9a8d4">Firestore</text>
+  <text x="1330" y="1112" text-anchor="middle" font-size="10" fill="#6b7280">invoices · suppliers · logs</text>
+  <text x="1330" y="1126" text-anchor="middle" font-size="10" fill="#6b7280">Long-term memory store</text>
+  <text x="1330" y="1140" text-anchor="middle" font-size="10" fill="#6b7280">[firebase_admin] TOML section</text>
 
   <!-- Arrows: services → external APIs -->
-  <line x1="260" y1="798" x2="200" y2="826" stroke="#dc2626" stroke-width="1.5" marker-end="url(#arrow-red)"/>
-  <line x1="700" y1="798" x2="520" y2="826" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#arrow-blue)"/>
-  <line x1="1145" y1="798" x2="840" y2="826" stroke="#22c55e" stroke-width="1.5" marker-end="url(#arrow-green)"/>
-  <line x1="260" y1="798" x2="1100" y2="826" stroke="#f472b6" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arrow-gray)"/>
+  <line x1="270" y1="984" x2="220" y2="1012" stroke="#dc2626" stroke-width="1.5" marker-end="url(#arrow-red)"/>
+  <line x1="746" y1="984" x2="610" y2="1012" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#arrow-blue)"/>
+  <line x1="1226" y1="984" x2="1000" y2="1012" stroke="#22c55e" stroke-width="1.5" marker-end="url(#arrow-green)"/>
+  <line x1="270" y1="984" x2="1280" y2="1012" stroke="#f472b6" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arrow-gray)"/>
 
-
-  <!-- ═══════════════════════════════════════════
-       ROW 6 — CONFIG  (y: 1048–1084)
-  ═══════════════════════════════════════════ -->
-  <rect x="50" y="1048" width="700" height="36" rx="8" fill="#111827" stroke="#374151" stroke-width="1.5"/>
-  <text x="400" y="1064" text-anchor="middle" font-size="11" font-weight="700" fill="#d1d5db">⚙  .streamlit/secrets.toml</text>
-  <text x="400" y="1078" text-anchor="middle" font-size="10" fill="#6b7280">OPENAI_API_KEY · GOOGLE_CLIENT_ID · GOOGLE_CLIENT_SECRET · GOOGLE_REDIRECT_URI · [firebase_admin] service account section</text>
-
-  <rect x="770" y="1048" width="590" height="36" rx="8" fill="#111827" stroke="#374151" stroke-width="1.5"/>
-  <text x="1065" y="1064" text-anchor="middle" font-size="11" font-weight="700" fill="#d1d5db">📦  requirements.txt</text>
-  <text x="1065" y="1078" text-anchor="middle" font-size="10" fill="#6b7280">streamlit · langgraph · openai · firebase-admin · google-auth · google-api-python-client · pymupdf · tenacity · pandas</text>
-
-
-  <!-- ═══════════════════════════════════════════
+  <!-- ══════════════════════════════════════
        LEGEND
-  ═══════════════════════════════════════════ -->
-  <rect x="1220" y="248" width="140" height="350" rx="10" fill="#111827" stroke="#374151" stroke-width="1.5"/>
-  <text x="1290" y="270" text-anchor="middle" font-size="12" font-weight="700" fill="#d1d5db">Legend</text>
-  <line x1="1228" y1="276" x2="1352" y2="276" stroke="#374151" stroke-width="0.8"/>
+  ══════════════════════════════════════ -->
+  <rect x="1310" y="220" width="148" height="370" rx="10" fill="#111827" stroke="#374151" stroke-width="1.5"/>
+  <text x="1384" y="240" text-anchor="middle" font-size="12" font-weight="700" fill="#d1d5db">Legend</text>
+  <line x1="1318" y1="246" x2="1450" y2="246" stroke="#374151" stroke-width="0.8"/>
 
-  <rect x="1233" y="286" width="12" height="12" rx="2" fill="#1d4ed8"/>
-  <text x="1252" y="297" font-size="10" fill="#9ca3af">UI (Streamlit)</text>
-  <rect x="1233" y="306" width="12" height="12" rx="2" fill="#6d28d9"/>
-  <text x="1252" y="317" font-size="10" fill="#9ca3af">Auth</text>
-  <rect x="1233" y="326" width="12" height="12" rx="2" fill="#b45309"/>
-  <text x="1252" y="337" font-size="10" fill="#9ca3af">Agent / Nodes</text>
-  <rect x="1233" y="346" width="12" height="12" rx="2" fill="#065f46"/>
-  <text x="1252" y="357" font-size="10" fill="#9ca3af">Services</text>
-  <rect x="1233" y="366" width="12" height="12" rx="2" fill="#7f1d1d"/>
-  <text x="1252" y="377" font-size="10" fill="#9ca3af">External APIs</text>
-  <rect x="1233" y="386" width="12" height="12" rx="2" fill="#374151"/>
-  <text x="1252" y="397" font-size="10" fill="#9ca3af">Config</text>
+  <rect x="1323" y="256" width="12" height="12" rx="2" fill="#1d4ed8"/>
+  <text x="1342" y="267" font-size="10" fill="#9ca3af">UI (Streamlit)</text>
+  <rect x="1323" y="276" width="12" height="12" rx="2" fill="#6d28d9"/>
+  <text x="1342" y="287" font-size="10" fill="#9ca3af">Auth</text>
+  <rect x="1323" y="296" width="12" height="12" rx="2" fill="#b45309"/>
+  <text x="1342" y="307" font-size="10" fill="#9ca3af">Agent / Nodes</text>
+  <rect x="1323" y="316" width="12" height="12" rx="2" fill="#065f46"/>
+  <text x="1342" y="327" font-size="10" fill="#9ca3af">Services</text>
+  <rect x="1323" y="336" width="12" height="12" rx="2" fill="#7f1d1d"/>
+  <text x="1342" y="347" font-size="10" fill="#9ca3af">External APIs</text>
 
-  <line x1="1228" y1="412" x2="1352" y2="412" stroke="#374151" stroke-width="0.5"/>
+  <line x1="1318" y1="358" x2="1450" y2="358" stroke="#374151" stroke-width="0.5"/>
 
-  <line x1="1233" y1="424" x2="1258" y2="424" stroke="#fb923c" stroke-width="2" marker-end="url(#arrow-orange)"/>
-  <text x="1265" y="428" font-size="10" fill="#9ca3af">UI → Agent</text>
-  <line x1="1233" y1="444" x2="1258" y2="444" stroke="#16a34a" stroke-width="2" marker-end="url(#arrow-green)"/>
-  <text x="1265" y="448" font-size="10" fill="#9ca3af">Node → Service</text>
-  <line x1="1233" y1="464" x2="1258" y2="464" stroke="#8b5cf6" stroke-width="2" marker-end="url(#arrow-purple)"/>
-  <text x="1265" y="468" font-size="10" fill="#9ca3af">Auth flow</text>
-  <line x1="1233" y1="484" x2="1258" y2="484" stroke="#374151" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrow-gray)"/>
-  <text x="1265" y="488" font-size="10" fill="#9ca3af">Indirect / config</text>
-  <line x1="1233" y1="504" x2="1258" y2="504" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrow-blue)"/>
-  <text x="1265" y="508" font-size="10" fill="#9ca3af">Session state</text>
-  <line x1="1233" y1="524" x2="1258" y2="524" stroke="#dc2626" stroke-width="2" marker-end="url(#arrow-red)"/>
-  <text x="1265" y="528" font-size="10" fill="#9ca3af">Service → API</text>
+  <line x1="1323" y1="370" x2="1348" y2="370" stroke="#fb923c" stroke-width="2" marker-end="url(#arrow-orange)"/>
+  <text x="1355" y="374" font-size="10" fill="#9ca3af">UI → graph</text>
+  <line x1="1323" y1="390" x2="1348" y2="390" stroke="#fbbf24" stroke-width="2" marker-end="url(#arrow-yellow)"/>
+  <text x="1355" y="394" font-size="10" fill="#9ca3af">HITL flow</text>
+  <line x1="1323" y1="410" x2="1348" y2="410" stroke="#16a34a" stroke-width="2" marker-end="url(#arrow-green)"/>
+  <text x="1355" y="414" font-size="10" fill="#9ca3af">Node → service</text>
+  <line x1="1323" y1="430" x2="1348" y2="430" stroke="#8b5cf6" stroke-width="2" marker-end="url(#arrow-purple)"/>
+  <text x="1355" y="434" font-size="10" fill="#9ca3af">Auth flow</text>
+  <line x1="1323" y1="450" x2="1348" y2="450" stroke="#374151" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrow-gray)"/>
+  <text x="1355" y="454" font-size="10" fill="#9ca3af">Indirect</text>
+  <line x1="1323" y1="470" x2="1348" y2="470" stroke="#dc2626" stroke-width="2" marker-end="url(#arrow-red)"/>
+  <text x="1355" y="474" font-size="10" fill="#9ca3af">→ External API</text>
 
-  <line x1="1228" y1="540" x2="1352" y2="540" stroke="#374151" stroke-width="0.5"/>
-  <text x="1290" y="558" text-anchor="middle" font-size="9" fill="#6b7280">Upload flow:</text>
-  <text x="1290" y="572" text-anchor="middle" font-size="9" fill="#fb923c">UI → GPT-4o extract</text>
-  <text x="1290" y="586" text-anchor="middle" font-size="9" fill="#4a9eff">→ Drive upload</text>
-  <text x="1290" y="600" text-anchor="middle" font-size="9" fill="#f472b6">→ Firestore save</text>
+  <line x1="1318" y1="486" x2="1450" y2="486" stroke="#374151" stroke-width="0.5"/>
+  <text x="1384" y="502" text-anchor="middle" font-size="9" fill="#fbbf24">HITL Upload:</text>
+  <text x="1384" y="516" text-anchor="middle" font-size="9" fill="#6b7280">1. invoke → extract</text>
+  <text x="1384" y="530" text-anchor="middle" font-size="9" fill="#6b7280">2. ⏸ review form</text>
+  <text x="1384" y="544" text-anchor="middle" font-size="9" fill="#6b7280">3. update_state</text>
+  <text x="1384" y="558" text-anchor="middle" font-size="9" fill="#6b7280">4. invoke(None)</text>
+  <text x="1384" y="572" text-anchor="middle" font-size="9" fill="#6b7280">5. rename + check</text>
 
 </svg>

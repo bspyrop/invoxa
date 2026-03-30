@@ -159,6 +159,19 @@ def _render_hitl(uid: str) -> None:
 
     st.subheader("📋 Review Extracted Data")
 
+    # Category selection lives OUTSIDE the form so selecting triggers a rerun
+    categories   = get_user_categories()
+    options      = categories + ["+ Add new category…"]
+    raw_cat      = invoice.get("category", categories[0])
+    cat_idx      = categories.index(raw_cat) if raw_cat in categories else 0
+    selected_cat = st.selectbox("Category", options, index=cat_idx, key="_hitl_cat")
+
+    new_cat_input = ""
+    if selected_cat == "+ Add new category…":
+        new_cat_input = st.text_input("New category name", placeholder="e.g. Insurance", key="_hitl_new_cat")
+
+    st.markdown("---")
+
     with st.form("hitl_review"):
         c1, c2 = st.columns(2)
         with c1:
@@ -172,14 +185,6 @@ def _render_hitl(uid: str) -> None:
                 format="%.2f",
             )
         with c2:
-            categories    = get_user_categories()
-            options       = categories + ["+ Add new category…"]
-            raw_cat       = invoice.get("category", categories[-1])
-            cat_idx       = categories.index(raw_cat) if raw_cat in categories else 0
-            selected_cat  = st.selectbox("Category", options, index=cat_idx)
-            new_cat_input = ""
-            if selected_cat == "+ Add new category…":
-                new_cat_input = st.text_input("New category name", placeholder="e.g. Insurance")
             currency = st.text_input("Currency (ISO)", value=str(invoice.get("currency") or "EUR"), max_chars=3)
             tax      = st.number_input(
                 "Tax Amount",

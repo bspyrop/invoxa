@@ -18,7 +18,7 @@ Return exactly this JSON structure:
   "currency":        "3-letter ISO currency code (e.g. EUR, USD, GBP)",
   "tax_amount":      <numeric tax/VAT amount, or 0 if not applicable>,
   "tax_rate":        <numeric percentage e.g. 20 for 20%, or null if not shown>,
-  "category":        "one of: Software, Travel, Office Supplies, Utilities, Marketing, Professional Services, Other",
+  "category":        "one of: {categories}",
   "description":     "brief 1-sentence description of what was purchased"
 }}
 
@@ -32,11 +32,14 @@ Rules:
 - Do NOT include any text outside the JSON object."""
 
 
-def _build_system_prompt() -> str:
+def _build_system_prompt(categories: list | None = None) -> str:
+    from utils.helpers import CATEGORIES
     today = date.today()
+    cats  = ", ".join(categories or CATEGORIES)
     return _BASE_SYSTEM_PROMPT.format(
         today=today.strftime("%Y-%m-%d"),
         current_year=today.year,
+        categories=cats,
     )
 
 
@@ -46,19 +49,20 @@ EXTRACTION_SYSTEM_PROMPT = _build_system_prompt()
 EXTRACTION_USER_PROMPT = "Extract all invoice data from the attached document."
 
 
-def build_extraction_messages(image_b64: str, mime_type: str = "image/jpeg") -> list:
+def build_extraction_messages(image_b64: str, mime_type: str = "image/jpeg", categories: list | None = None) -> list:
     """
     Build the messages list for a GPT-4o vision call to extract invoice data.
 
     Args:
-        image_b64: Base64-encoded image or PDF page.
-        mime_type: MIME type of the image (image/jpeg, image/png, image/webp).
+        image_b64:  Base64-encoded image or PDF page.
+        mime_type:  MIME type of the image (image/jpeg, image/png, image/webp).
+        categories: User-defined category list (falls back to defaults if None).
 
     Returns:
         List of message dicts ready for openai.chat.completions.create().
     """
     return [
-        {"role": "system", "content": _build_system_prompt()},
+        {"role": "system", "content": _build_system_prompt(categories)},
         {
             "role": "user",
             "content": [

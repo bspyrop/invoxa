@@ -208,3 +208,18 @@ def get_report_name(year: Optional[str] = None) -> str:
 def get_default_currency() -> str:
     """Return the configured default currency (default 'EUR')."""
     return st.session_state.get("default_currency", "EUR")
+
+
+# ---------------------------------------------------------------------------
+# Categories
+# ---------------------------------------------------------------------------
+
+def get_user_categories() -> List[str]:
+    """Return the user's active category list from session state."""
+    from utils.helpers import CATEGORIES
+    return st.session_state.get("user_categories", CATEGORIES)
+
+
+def set_user_categories(categories: List[str]) -> None:
+    """Store the user's category list in session state."""
+    st.session_state["user_categories"] = categories

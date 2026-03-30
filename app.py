@@ -10,7 +10,7 @@ from __future__ import annotations
 import streamlit as st
 
 from auth.firebase_auth import is_authenticated, render_login_page
-from utils.session import init_session
+from utils.session import get_uid, init_session
 
 # ---------------------------------------------------------------------------
 # Page configuration (must be first Streamlit call)
@@ -42,6 +42,12 @@ init_session()
 if not is_authenticated():
     render_login_page()
     st.stop()
+
+# Load user categories from Firestore into session state (once per session)
+if "user_categories" not in st.session_state:
+    from services.firestore import get_categories
+    from utils.session import set_user_categories
+    set_user_categories(get_categories(get_uid()))
 
 # ---------------------------------------------------------------------------
 # Navigation

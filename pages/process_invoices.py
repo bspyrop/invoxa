@@ -23,8 +23,8 @@ import streamlit as st
 from agent.graph import graph
 from services.firestore import delete_invoice
 from services.google_drive import delete_file, get_or_create_folder, upload_file
-from utils.helpers import CATEGORIES, current_month_year
-from utils.session import get_uid
+from utils.helpers import current_month_year
+from utils.session import get_uid, get_user_categories
 
 # Session-state keys (all prefixed _inv_ to avoid collisions)
 _KEY_BYTES   = "_inv_bytes"
@@ -172,9 +172,10 @@ def _render_hitl(uid: str) -> None:
                 format="%.2f",
             )
         with c2:
-            raw_cat  = invoice.get("category", "Other")
-            cat_idx  = CATEGORIES.index(raw_cat) if raw_cat in CATEGORIES else len(CATEGORIES) - 1
-            category = st.selectbox("Category", CATEGORIES, index=cat_idx)
+            categories = get_user_categories()
+            raw_cat  = invoice.get("category", categories[-1])
+            cat_idx  = categories.index(raw_cat) if raw_cat in categories else len(categories) - 1
+            category = st.selectbox("Category", categories, index=cat_idx)
             currency = st.text_input("Currency (ISO)", value=str(invoice.get("currency") or "EUR"), max_chars=3)
             tax      = st.number_input(
                 "Tax Amount",

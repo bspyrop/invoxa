@@ -10,9 +10,9 @@ from __future__ import annotations
 import streamlit as st
 
 from auth.firebase_auth import sign_out
-from services.firestore import update_user_settings
+from services.firestore import save_categories, update_user_settings
 from utils.helpers      import CATEGORIES
-from utils.session      import get_uid
+from utils.session      import get_uid, get_user_categories, set_user_categories
 
 
 def render() -> None:
@@ -72,14 +72,46 @@ def render() -> None:
 
     st.markdown("---")
 
-    # ---- Category rules ----
+    # ---- Category Labels ----
     st.subheader("Category Labels")
     st.caption(
-        "These are the categories Invoxa uses when classifying invoices. "
-        "Currently fixed — custom categories coming soon."
+        "These categories are used by GPT-4o when classifying invoices and in the HITL review form. "
+        "Add, remove, or rename them — changes are saved to Firestore and applied immediately."
     )
-    for cat in CATEGORIES:
-        st.markdown(f"- {cat}")
+
+    current_cats = get_user_categories()
+
+    with st.form("category_settings"):
+        cats_text = st.text_area(
+            "Categories (one per line)",
+            value="\n".join(current_cats),
+            height=220,
+            help="Enter one category per line. The last entry is used as the fallback.",
+        )
+        col_save, col_reset = st.columns(2)
+        save_cats  = col_save.form_submit_button("Save Categories", type="primary", use_container_width=True)
+        reset_cats = col_reset.form_submit_button("Reset to Defaults", use_container_width=True)
+
+    if save_cats:
+        new_cats = [c.strip() for c in cats_text.splitlines() if c.strip()]
+        if len(new_cats) < 2:
+            st.error("Please enter at least 2 categories.")
+        else:
+            try:
+                save_categories(uid, new_cats)
+                set_user_categories(new_cats)
+                st.success(f"Saved {len(new_cats)} categories.")
+            except Exception as exc:
+                st.error(f"Could not save: {exc}")
+
+    if reset_cats:
+        try:
+            save_categories(uid, CATEGORIES)
+            set_user_categories(CATEGORIES)
+            st.success("Categories reset to defaults.")
+            st.rerun()
+        except Exception as exc:
+            st.error(f"Could not reset: {exc}")
 
     st.markdown("---")
 

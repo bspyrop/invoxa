@@ -122,8 +122,9 @@ def _call_openai_extraction(client: OpenAI, image_b64: str, mime_type: str) -> D
     """
     # Normalise PDF mime for vision
     vision_mime = mime_type if mime_type.startswith("image/") else "image/jpeg"
+    categories  = st.session_state.get("user_categories")
 
-    messages = build_extraction_messages(image_b64, vision_mime)
+    messages = build_extraction_messages(image_b64, vision_mime, categories)
     response = client.chat.completions.create(
         model=VISION_MODEL,
         messages=messages,  # type: ignore[arg-type]
@@ -140,10 +141,11 @@ def _call_openai_text_extraction(client: OpenAI, text: str) -> Dict[str, Any]:
     """Call GPT-4o with plain text (for PDFs where image conversion is unavailable)."""
     from agent.prompts.extraction_prompt import _build_system_prompt
 
+    categories = st.session_state.get("user_categories")
     response = client.chat.completions.create(
         model=VISION_MODEL,
         messages=[
-            {"role": "system", "content": _build_system_prompt()},
+            {"role": "system", "content": _build_system_prompt(categories)},
             {"role": "user",   "content": f"Extract invoice data from this text:\n\n{text}"},
         ],
         max_tokens=800,

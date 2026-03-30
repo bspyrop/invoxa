@@ -229,6 +229,29 @@ def _update_supplier_memory(uid: str, invoice: Dict[str, Any]) -> None:
         logger.error("_update_supplier_memory failed: %s", exc)
 
 
+def get_categories(uid: str) -> List[str]:
+    """
+    Return the user's custom category list, or the default list if not set.
+    """
+    from utils.helpers import CATEGORIES as DEFAULT_CATEGORIES
+    try:
+        profile = get_user_profile(uid)
+        if profile and profile.get("categories"):
+            return list(profile["categories"])
+    except Exception as exc:
+        logger.error("get_categories(%s) failed: %s", uid, exc)
+    return list(DEFAULT_CATEGORIES)
+
+
+def save_categories(uid: str, categories: List[str]) -> None:
+    """Persist the user's custom category list to their profile document."""
+    try:
+        _db().collection("users").document(uid).set({"categories": categories}, merge=True)
+    except Exception as exc:
+        logger.error("save_categories(%s) failed: %s", uid, exc)
+        raise
+
+
 def get_all_suppliers(uid: str) -> List[Dict[str, Any]]:
     """Return all supplier summary documents for a user."""
     try:

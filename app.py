@@ -7,6 +7,8 @@ Run locally:  streamlit run app.py
 
 from __future__ import annotations
 
+import os
+
 import streamlit as st
 
 from auth.firebase_auth import is_authenticated, render_login_page
@@ -15,6 +17,14 @@ from utils.session import get_uid, init_session
 # ---------------------------------------------------------------------------
 # Page configuration (must be first Streamlit call)
 # ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# LangSmith tracing (set env vars before any LangGraph import)
+# ---------------------------------------------------------------------------
+
+os.environ["LANGCHAIN_TRACING_V2"] = st.secrets.get("LANGCHAIN_TRACING_V2", "false")
+os.environ["LANGCHAIN_API_KEY"]    = st.secrets.get("LANGCHAIN_API_KEY", "")
+os.environ["LANGCHAIN_PROJECT"]    = st.secrets.get("LANGCHAIN_PROJECT", "invoxa")
 
 st.set_page_config(
     page_title="Invoxa — Expense Agent",

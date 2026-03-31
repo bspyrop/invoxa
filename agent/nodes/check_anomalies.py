@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import logging
 import statistics
+from difflib import SequenceMatcher
 from typing import Any, Dict, List
 
 from agent.state import AgentState, AnomalyWarning, InvoiceData
@@ -22,48 +23,70 @@ logger = logging.getLogger(__name__)
 RECURRING_THRESHOLD = 2
 
 
+_SUPPLIER_SIMILARITY_THRESHOLD = 0.82   # 0–1; 0.82 catches typos/abbreviations
+_AMOUNT_TOLERANCE              = 0.01   # 1% — essentially exact same amount
+
+
+def _supplier_similar(a: str, b: str) -> bool:
+    """Return True if two supplier names are very similar (fuzzy match)."""
+    return SequenceMatcher(None, a, b).ratio() >= _SUPPLIER_SIMILARITY_THRESHOLD
+
+
 def _find_duplicates(
     new_invoices: List[InvoiceData],
     existing_invoices: List[Dict[str, Any]],
-    tolerance: float = 0.01,
 ) -> List[AnomalyWarning]:
     """
-    Detect invoices in new_invoices that closely match something already in Firestore.
+    Detect invoices that closely match something already in Firestore.
 
-    Args:
-        new_invoices:      Freshly extracted invoices for this run.
-        existing_invoices: All Firestore invoices for this user/month.
-        tolerance:         Fractional amount tolerance for amount comparison.
-
-    Returns:
-        List of AnomalyWarning dicts.
+    Match criteria (ALL must pass — no category involved):
+      • Supplier name similarity ≥ 82% (fuzzy, catches typos/short names)
+      • Amount within 1% (essentially exact)
+      • Invoice date is identical (when both are present)
     """
     warnings: List[AnomalyWarning] = []
     for inv in new_invoices:
-        supplier = (inv.get("supplier_name") or "").lower()
+        supplier = (inv.get("supplier_name") or "").lower().strip()
         amount   = float(inv.get("amount", 0) or 0)
+        date     = (inv.get("invoice_date") or "").strip()
+
         for ex in existing_invoices:
-            if (ex.get("supplier_name") or "").lower() != supplier:
+            ex_supplier = (ex.get("supplier_name") or "").lower().strip()
+            ex_amount   = float(ex.get("amount", 0) or 0)
+            ex_date     = (ex.get("invoice_date") or "").strip()
+
+            if ex_amount == 0 or amount == 0:
                 continue
-            ex_amount = float(ex.get("amount", 0) or 0)
-            if ex_amount == 0:
+
+            # 1. Supplier name must be very similar
+            if not _supplier_similar(supplier, ex_supplier):
                 continue
-            diff = abs(ex_amount - amount) / max(ex_amount, 1)
-            if diff <= tolerance:
-                warnings.append(
-                    AnomalyWarning(
-                        type="duplicate",
-                        message=(
-                            f"Possible duplicate: {inv.get('supplier_name')} "
-                            f"{amount} {inv.get('currency', '')} — matches an existing invoice."
-                        ),
-                        details={
-                            "new_invoice":      inv.get("original_filename"),
-                            "existing_invoice": ex.get("original_filename"),
-                            "amount":           amount,
-                        },
-                    )
+
+            # 2. Amount must be essentially the same
+            if abs(ex_amount - amount) / max(ex_amount, 1) > _AMOUNT_TOLERANCE:
+                continue
+
+            # 3. Date must match when both are present
+            if date and ex_date and date != ex_date:
+                continue
+
+            warnings.append(
+                AnomalyWarning(
+                    type="duplicate",
+                    message=(
+                        f"Possible duplicate: {inv.get('supplier_name')} "
+                        f"{amount} {inv.get('currency', '')} on {date or 'unknown date'} "
+                        f"— matches existing invoice '{ex.get('original_filename', 'unknown')}'."
+                    ),
+                    details={
+                        "new_invoice":      inv.get("original_filename"),
+                        "existing_invoice": ex.get("original_filename"),
+                        "amount":           amount,
+                        "date":             date,
+                        "supplier_score":   round(SequenceMatcher(None, supplier, ex_supplier).ratio(), 2),
+                    },
                 )
+            )
     return warnings
 
 

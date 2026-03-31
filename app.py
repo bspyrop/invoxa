@@ -8,6 +8,36 @@ Run locally:  streamlit run app.py
 from __future__ import annotations
 
 import os
+import sys
+
+# ---------------------------------------------------------------------------
+# LangSmith — must be set BEFORE any langgraph/langchain import.
+# Read secrets.toml directly so we don't depend on st.secrets loading first.
+# ---------------------------------------------------------------------------
+
+def _set_langsmith_env() -> None:
+    try:
+        if sys.version_info >= (3, 11):
+            import tomllib
+            _open = lambda p: open(p, "rb")
+            _load = tomllib.load
+        else:
+            import tomli as tomllib  # type: ignore
+            _open = lambda p: open(p, "rb")
+            _load = tomllib.load
+
+        secrets_path = os.path.join(os.path.dirname(__file__), ".streamlit", "secrets.toml")
+        with _open(secrets_path) as f:
+            secrets = _load(f)
+
+        os.environ.setdefault("LANGCHAIN_TRACING_V2", str(secrets.get("LANGCHAIN_TRACING_V2", "false")))
+        os.environ.setdefault("LANGCHAIN_API_KEY",    str(secrets.get("LANGCHAIN_API_KEY", "")))
+        os.environ.setdefault("LANGCHAIN_PROJECT",    str(secrets.get("LANGCHAIN_PROJECT", "invoxa")))
+        os.environ.setdefault("LANGCHAIN_ENDPOINT",   str(secrets.get("LANGCHAIN_ENDPOINT", "https://eu.api.smith.langchain.com")))
+    except Exception:
+        pass  # non-fatal — tracing just won't work
+
+_set_langsmith_env()
 
 import streamlit as st
 
@@ -18,20 +48,13 @@ from utils.session import get_uid, init_session
 # Page configuration (must be first Streamlit call)
 # ---------------------------------------------------------------------------
 
-# ---------------------------------------------------------------------------
-# LangSmith tracing (set env vars before any LangGraph import)
-# ---------------------------------------------------------------------------
-
-os.environ["LANGCHAIN_TRACING_V2"] = st.secrets.get("LANGCHAIN_TRACING_V2", "false")
-os.environ["LANGCHAIN_API_KEY"]    = st.secrets.get("LANGCHAIN_API_KEY", "")
-os.environ["LANGCHAIN_PROJECT"]    = st.secrets.get("LANGCHAIN_PROJECT", "invoxa")
-
 st.set_page_config(
     page_title="Invoxa — Expense Agent",
     page_icon="🧾",
     layout="wide",
     initial_sidebar_state="collapsed",
 )
+
 
 # Hide Streamlit's auto-generated multipage navigation (we use our own)
 st.markdown(

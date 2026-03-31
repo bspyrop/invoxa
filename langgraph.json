@@ -1,0 +1,7 @@
+{
+  "dependencies": ["."],
+  "graphs": {
+    "invoxa": "./agent/graph.py:graph"
+  },
+  "env": ".streamlit/secrets.toml"
+}

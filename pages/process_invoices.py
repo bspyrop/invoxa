@@ -254,6 +254,8 @@ def _render_hitl(uid: str) -> None:
         st.session_state[_KEY_SNAP] = result
 
         warnings = result.get("anomaly_warnings") or []
+        with st.expander(f"🔍 Debug — anomaly_warnings ({len(warnings)} found)", expanded=True):
+            st.json(warnings)
 
         # Route to anomaly HITL if any warnings were raised
         if warnings:

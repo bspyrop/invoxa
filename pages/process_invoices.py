@@ -253,8 +253,10 @@ def _render_hitl(uid: str) -> None:
 
         st.session_state[_KEY_SNAP] = result
 
+        warnings = result.get("anomaly_warnings") or []
+
         # Route to anomaly HITL if any warnings were raised
-        if result.get("anomaly_warnings"):
+        if warnings:
             st.session_state[_KEY_PHASE] = "anomaly_hitl"
         else:
             st.session_state[_KEY_PHASE] = "done"

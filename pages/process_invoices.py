@@ -30,7 +30,7 @@ from utils.session import get_uid, get_user_categories, set_user_categories
 _KEY_BYTES   = "_inv_bytes"
 _KEY_MIME    = "_inv_mime"
 _KEY_FNAME   = "_inv_filename"
-_KEY_PHASE   = "_inv_phase"      # None | "hitl" | "done"
+_KEY_PHASE   = "_inv_phase"      # None | "hitl" | "anomaly_hitl" | "done"
 _KEY_THREAD  = "_inv_thread"     # LangGraph thread_id
 _KEY_SNAP    = "_inv_snapshot"   # state dict returned by graph.invoke
 _KEY_DRIVEID = "_inv_drive_id"   # Drive file ID of the uploaded temp file
@@ -47,6 +47,9 @@ def render() -> None:
     elif phase == "hitl":
         st.caption("Review the extracted data before saving.")
         _render_hitl(uid)
+    elif phase == "anomaly_hitl":
+        st.caption("Anomalies detected — review before finalising.")
+        _render_anomaly_hitl(uid)
     elif phase == "done":
         _render_done()
 
@@ -248,8 +251,13 @@ def _render_hitl(uid: str) -> None:
         with st.spinner("Organising in Google Drive and checking anomalies…"):
             result = graph.invoke(None, config=config)
 
-        st.session_state[_KEY_SNAP]  = result
-        st.session_state[_KEY_PHASE] = "done"
+        st.session_state[_KEY_SNAP] = result
+
+        # Route to anomaly HITL if any warnings were raised
+        if result.get("anomaly_warnings"):
+            st.session_state[_KEY_PHASE] = "anomaly_hitl"
+        else:
+            st.session_state[_KEY_PHASE] = "done"
         st.rerun()
 
     if cancelled:
@@ -268,6 +276,58 @@ def _render_hitl(uid: str) -> None:
                 pass
         _reset()
         st.info("Upload cancelled. The file has been removed.")
+        st.rerun()
+
+
+# ---------------------------------------------------------------------------
+# Phase 2b — Anomaly HITL: show warnings, let user keep or discard
+# ---------------------------------------------------------------------------
+
+def _render_anomaly_hitl(uid: str) -> None:
+    snap     = st.session_state.get(_KEY_SNAP, {})
+    warnings = snap.get("anomaly_warnings", [])
+    extracted = snap.get("extracted_data", [])
+    inv = extracted[0] if extracted else {}
+
+    st.subheader("⚠️ Anomalies Detected")
+    st.markdown(
+        f"**{inv.get('supplier_name', '—')}** · "
+        f"{inv.get('amount', 0)} {inv.get('currency', 'EUR')} · "
+        f"{inv.get('invoice_date', '—')}"
+    )
+    st.markdown("---")
+
+    for w in warnings:
+        wtype = w.get("type", "")
+        icon  = "🔴" if wtype == "duplicate" else "🟡"
+        st.warning(f"{icon} {w.get('message', '')}")
+
+    st.markdown("---")
+    st.markdown("Do you want to **keep** this invoice or **discard** it?")
+
+    col_keep, col_discard = st.columns(2)
+    keep    = col_keep.button("✅ Keep Invoice", type="primary", use_container_width=True)
+    discard = col_discard.button("🗑️ Discard Invoice", use_container_width=True)
+
+    if keep:
+        st.session_state[_KEY_PHASE] = "done"
+        st.rerun()
+
+    if discard:
+        drive_id = st.session_state.get(_KEY_DRIVEID)
+        creds    = st.session_state.get("google_credentials")
+        if drive_id and creds:
+            try:
+                delete_file(creds, drive_id)
+            except Exception:
+                pass
+        if drive_id:
+            try:
+                delete_invoice(uid, drive_id)
+            except Exception:
+                pass
+        _reset()
+        st.info("Invoice discarded and removed.")
         st.rerun()
 
 

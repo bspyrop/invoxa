@@ -85,7 +85,9 @@ with st.sidebar:
         format_func=lambda x: f"{PAGE_ICONS[x]}  {x}",
         label_visibility="collapsed",
     )
-    st.session_state["current_page"] = selected_page
+    if selected_page != current:
+        st.session_state["current_page"] = selected_page
+        st.rerun()
 
     st.markdown("---")
 

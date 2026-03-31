@@ -10,7 +10,7 @@ from __future__ import annotations
 import streamlit as st
 
 from auth.firebase_auth import sign_out
-from services.firestore import save_categories, update_user_settings
+from services.firestore import get_ai_usage, get_total_ai_cost, save_categories, update_user_settings
 from utils.helpers      import CATEGORIES
 from utils.session      import get_uid, get_user_categories, set_user_categories
 
@@ -112,6 +112,67 @@ def render() -> None:
             st.rerun()
         except Exception as exc:
             st.error(f"Could not reset: {exc}")
+
+    st.markdown("---")
+
+    # ---- AI Cost Monitoring ----
+    st.subheader("🤖 AI Cost Monitoring")
+    st.caption("Token usage and USD cost for every OpenAI API call made by Invoxa.")
+
+    total_cost = get_total_ai_cost(uid)
+    usage_logs = get_ai_usage(uid, limit=200)
+
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Total AI Cost", f"${total_cost:.4f}")
+    c2.metric("Total API Calls", len(usage_logs))
+
+    if usage_logs:
+        import pandas as pd
+
+        df = pd.DataFrame(usage_logs)
+        df["timestamp"] = pd.to_datetime(df["timestamp"]).dt.strftime("%Y-%m-%d %H:%M")
+        df["cost_usd"]  = df["cost_usd"].apply(lambda x: f"${x:.5f}")
+
+        # Per-model summary
+        df_raw = pd.DataFrame(usage_logs)
+        summary = (
+            df_raw.groupby("model")
+            .agg(
+                calls=("cost_usd", "count"),
+                total_tokens=("total_tokens", "sum"),
+                total_cost=("cost_usd", "sum"),
+            )
+            .reset_index()
+        )
+        summary["total_cost"] = summary["total_cost"].apply(lambda x: f"${x:.5f}")
+        summary.columns = ["Model", "Calls", "Total Tokens", "Total Cost"]
+        c3.metric("Models Used", len(summary))
+
+        st.markdown("**By Model**")
+        st.dataframe(summary, use_container_width=True, hide_index=True)
+
+        # Per-action summary
+        action_summary = (
+            df_raw.groupby("action")
+            .agg(
+                calls=("cost_usd", "count"),
+                total_cost=("cost_usd", "sum"),
+            )
+            .reset_index()
+        )
+        action_summary["total_cost"] = action_summary["total_cost"].apply(lambda x: f"${x:.5f}")
+        action_summary.columns = ["Action", "Calls", "Total Cost"]
+
+        st.markdown("**By Action**")
+        st.dataframe(action_summary, use_container_width=True, hide_index=True)
+
+        # Full log
+        with st.expander("Full usage log (last 200 calls)"):
+            cols = ["timestamp", "model", "action", "prompt_tokens", "completion_tokens", "total_tokens", "cost_usd"]
+            cols = [c for c in cols if c in df.columns]
+            st.dataframe(df[cols], use_container_width=True, hide_index=True)
+    else:
+        st.info("No AI usage recorded yet. Upload an invoice or use the Chat to get started.")
 
     st.markdown("---")
 

@@ -277,6 +277,86 @@ def get_suppliers_for_month(uid: str, month: str, year: str) -> List[str]:
 
 
 # ---------------------------------------------------------------------------
+# AI usage / cost tracking
+# ---------------------------------------------------------------------------
+
+# Pricing per 1 million tokens (USD) — update when OpenAI changes rates
+_AI_PRICING: Dict[str, Dict[str, float]] = {
+    "gpt-4o":      {"input": 2.50,  "output": 10.00},
+    "gpt-4o-mini": {"input": 0.15,  "output": 0.60},
+}
+
+
+def calc_ai_cost(model: str, prompt_tokens: int, completion_tokens: int) -> float:
+    """Return the USD cost for a single OpenAI API call."""
+    pricing = _AI_PRICING.get(model, {"input": 0.0, "output": 0.0})
+    return (prompt_tokens * pricing["input"] + completion_tokens * pricing["output"]) / 1_000_000
+
+
+def log_ai_usage(
+    uid: str,
+    model: str,
+    action: str,
+    prompt_tokens: int,
+    completion_tokens: int,
+    cost_usd: float,
+    invoice_id: Optional[str] = None,
+) -> None:
+    """
+    Persist one AI API call to users/{uid}/ai_usage/ and increment the
+    running total on the user profile document.
+    """
+    try:
+        db  = _db()
+        doc: Dict[str, Any] = {
+            "model":             model,
+            "action":            action,
+            "prompt_tokens":     prompt_tokens,
+            "completion_tokens": completion_tokens,
+            "total_tokens":      prompt_tokens + completion_tokens,
+            "cost_usd":          cost_usd,
+            "timestamp":         datetime.now(timezone.utc).isoformat(),
+        }
+        if invoice_id:
+            doc["invoice_id"] = invoice_id
+        db.collection("users").document(uid).collection("ai_usage").add(doc)
+        # Increment running total on user profile
+        db.collection("users").document(uid).set(
+            {"total_ai_cost_usd": firestore.Increment(cost_usd)},
+            merge=True,
+        )
+    except Exception as exc:
+        logger.error("log_ai_usage(%s) failed: %s", uid, exc)
+
+
+def get_ai_usage(uid: str, limit: int = 200) -> List[Dict[str, Any]]:
+    """Return recent AI usage records, newest first."""
+    try:
+        docs = (
+            _db()
+            .collection("users")
+            .document(uid)
+            .collection("ai_usage")
+            .order_by("timestamp", direction=firestore.Query.DESCENDING)
+            .limit(limit)
+            .stream()
+        )
+        return [d.to_dict() for d in docs]
+    except Exception as exc:
+        logger.error("get_ai_usage(%s) failed: %s", uid, exc)
+        return []
+
+
+def get_total_ai_cost(uid: str) -> float:
+    """Return the cumulative AI cost (USD) stored on the user profile."""
+    try:
+        profile = get_user_profile(uid)
+        return float((profile or {}).get("total_ai_cost_usd", 0.0))
+    except Exception:
+        return 0.0
+
+
+# ---------------------------------------------------------------------------
 # Error / activity logging
 # ---------------------------------------------------------------------------
 

@@ -12,7 +12,7 @@ import io
 import json
 import logging
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import streamlit as st
 from openai import OpenAI
@@ -20,7 +20,7 @@ from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_ex
 
 from agent.state import AgentState, InvoiceData
 from agent.prompts.extraction_prompt import build_extraction_messages
-from services.firestore import log_error, save_invoice
+from services.firestore import calc_ai_cost, log_ai_usage, log_error, save_invoice
 from services.google_drive import download_file
 
 logger = logging.getLogger(__name__)
@@ -108,19 +108,13 @@ def _bytes_to_base64_list(file_bytes: bytes, mime_type: str) -> List[str]:
     stop=stop_after_attempt(3),
     reraise=True,
 )
-def _call_openai_extraction(client: OpenAI, image_b64: str, mime_type: str) -> Dict[str, Any]:
+def _call_openai_extraction(client: OpenAI, image_b64: str, mime_type: str) -> Tuple[Dict[str, Any], Any]:
     """
-    Call GPT-4o with the invoice image and return the parsed JSON dict.
-
-    Args:
-        client:    Authenticated OpenAI client.
-        image_b64: Base64-encoded image string.
-        mime_type: Image MIME type.
+    Call GPT-4o with the invoice image.
 
     Returns:
-        Parsed JSON dict with extracted invoice fields.
+        (parsed_data_dict, response.usage)
     """
-    # Normalise PDF mime for vision
     vision_mime = mime_type if mime_type.startswith("image/") else "image/jpeg"
     categories  = st.session_state.get("user_categories")
 
@@ -132,13 +126,16 @@ def _call_openai_extraction(client: OpenAI, image_b64: str, mime_type: str) -> D
         temperature=0,
     )
     raw = response.choices[0].message.content or "{}"
-    # Strip possible markdown code fence
     raw = raw.strip().lstrip("```json").lstrip("```").rstrip("```").strip()
-    return json.loads(raw)
+    return json.loads(raw), response.usage
 
 
-def _call_openai_text_extraction(client: OpenAI, text: str) -> Dict[str, Any]:
-    """Call GPT-4o with plain text (for PDFs where image conversion is unavailable)."""
+def _call_openai_text_extraction(client: OpenAI, text: str) -> Tuple[Dict[str, Any], Any]:
+    """Call GPT-4o with plain text (for PDFs where image conversion is unavailable).
+
+    Returns:
+        (parsed_data_dict, response.usage)
+    """
     from agent.prompts.extraction_prompt import _build_system_prompt
 
     categories = st.session_state.get("user_categories")
@@ -153,46 +150,41 @@ def _call_openai_text_extraction(client: OpenAI, text: str) -> Dict[str, Any]:
     )
     raw = response.choices[0].message.content or "{}"
     raw = raw.strip().lstrip("```json").lstrip("```").rstrip("```").strip()
-    return json.loads(raw)
+    return json.loads(raw), response.usage
 
 
 def _extract_from_file(
     client: OpenAI, file_bytes: bytes, mime_type: str, filename: str
-) -> Optional[Dict[str, Any]]:
+) -> Tuple[Optional[Dict[str, Any]], Any]:
     """
     Extract invoice data from a single file.
 
-    Strategy:
-      1. If image → send as vision request to GPT-4o
-      2. If PDF + poppler available → convert first page to image → vision
-      3. If PDF + no poppler → extract text with PyPDF2 → text request to GPT-4o
+    Returns:
+        (data_dict | None, usage | None)
     """
     try:
         if mime_type == "application/pdf":
-            # Try image conversion first (best quality)
             images = _pdf_to_base64_images(file_bytes)
             if images:
                 return _call_openai_extraction(client, images[0], "image/jpeg")
-            # Fallback: text extraction
             text = _pdf_to_text(file_bytes)
             if text:
                 logger.info("Using text extraction fallback for '%s'", filename)
                 return _call_openai_text_extraction(client, text)
             logger.error("PDF '%s' yielded neither images nor text", filename)
-            return None
+            return None, None
         else:
-            # Regular image file
             images = _bytes_to_base64_list(file_bytes, mime_type)
             if not images:
-                return None
+                return None, None
             return _call_openai_extraction(client, images[0], mime_type)
 
     except json.JSONDecodeError as exc:
         logger.error("JSON parse failed for '%s': %s", filename, exc)
-        return None
+        return None, None
     except Exception as exc:
         logger.error("Extraction failed for '%s': %s", filename, exc)
-        return None
+        return None, None
 
 
 # ---------------------------------------------------------------------------
@@ -243,10 +235,15 @@ def extract_invoice_data(state: AgentState) -> AgentState:
             log_error(uid, "extract_invoice_data:download", str(exc), {"file_id": file_id})
             continue
 
-        data = _extract_from_file(client, file_bytes, mime_type, filename)
+        data, usage = _extract_from_file(client, file_bytes, mime_type, filename)
         if data is None:
             log_error(uid, "extract_invoice_data:extraction", "Extraction returned None", {"filename": filename})
             continue
+
+        # Log AI cost for this extraction call
+        if usage:
+            cost = calc_ai_cost(VISION_MODEL, usage.prompt_tokens, usage.completion_tokens)
+            log_ai_usage(uid, VISION_MODEL, "extract", usage.prompt_tokens, usage.completion_tokens, cost, file_id)
 
         # Merge in Drive metadata
         invoice: InvoiceData = {

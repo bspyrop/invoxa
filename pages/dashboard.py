@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import streamlit as st
 
-from services.firestore import delete_invoice, get_invoices_for_month, get_recent_invoices
+from services.firestore import delete_invoice, get_invoices_for_month, get_recent_invoices, get_total_ai_cost
 from utils.helpers import MONTHS, compute_monthly_stats, current_month_year, format_amount, year_range
 from utils.session import get_uid
 
@@ -37,7 +37,9 @@ def render() -> None:
 
     stats = compute_monthly_stats(invoices)
 
-    col1, col2, col3, col4 = st.columns(4)
+    total_ai_cost = get_total_ai_cost(uid)
+
+    col1, col2, col3, col4, col5 = st.columns(5)
     with col1:
         st.metric(
             "Total Expenses",
@@ -52,6 +54,8 @@ def render() -> None:
         st.metric("Invoices Processed", stats["invoice_count"])
     with col4:
         st.metric("Unique Suppliers", stats["supplier_count"])
+    with col5:
+        st.metric("🤖 AI Cost (total)", f"${total_ai_cost:.4f}")
 
     st.markdown("---")
 

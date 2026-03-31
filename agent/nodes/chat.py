@@ -8,7 +8,7 @@ Uses GPT-4o-mini with full conversation history and Firestore context.
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 import streamlit as st
 from openai import OpenAI
@@ -16,7 +16,7 @@ from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_ex
 
 from agent.state import AgentState
 from agent.prompts.chat_prompt import build_chat_system_message, format_expense_context
-from services.firestore import get_all_invoices, get_all_suppliers, log_error
+from services.firestore import calc_ai_cost, get_all_invoices, get_all_suppliers, log_ai_usage, log_error
 
 logger = logging.getLogger(__name__)
 
@@ -35,22 +35,12 @@ def _call_openai_chat(
     system_message: dict,
     history: List[Dict[str, str]],
     user_query: str,
-) -> str:
+) -> Tuple[str, Any]:
     """
-    Send a chat request to GPT-4o-mini and return the assistant's reply.
-
-    Args:
-        client:         Authenticated OpenAI client.
-        system_message: System message dict with expense context injected.
-        history:        Prior conversation turns [{role, content}].
-        user_query:     The user's latest question.
-
-    Returns:
-        The assistant's reply text.
+    Send a chat request to GPT-4o-mini and return (reply, usage).
     """
     messages: List[Dict[str, Any]] = [system_message]
 
-    # Trim history to avoid exceeding context
     trimmed_history = history[-(MAX_HISTORY_TURNS * 2):]
     messages.extend(trimmed_history)
     messages.append({"role": "user", "content": user_query})
@@ -61,7 +51,7 @@ def _call_openai_chat(
         max_tokens=1024,
         temperature=0.3,
     )
-    return response.choices[0].message.content or ""
+    return response.choices[0].message.content or "", response.usage
 
 
 def chat_with_expenses(state: AgentState) -> AgentState:
@@ -102,7 +92,10 @@ def chat_with_expenses(state: AgentState) -> AgentState:
     system_message  = build_chat_system_message(expense_context)
 
     try:
-        answer = _call_openai_chat(client, system_message, chat_history, user_query)
+        answer, usage = _call_openai_chat(client, system_message, chat_history, user_query)
+        if usage:
+            cost = calc_ai_cost(CHAT_MODEL, usage.prompt_tokens, usage.completion_tokens)
+            log_ai_usage(uid, CHAT_MODEL, "chat", usage.prompt_tokens, usage.completion_tokens, cost)
     except Exception as exc:
         msg = f"Chat request failed: {exc}"
         logger.error(msg)

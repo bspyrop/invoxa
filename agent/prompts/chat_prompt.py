@@ -49,15 +49,19 @@ def format_expense_context(invoices: list[dict], suppliers: list[dict]) -> str:
     if invoices:
         lines.append("INVOICES:")
         for inv in invoices:
-            date     = inv.get("invoice_date", "unknown date")
-            supplier = inv.get("supplier_name", "Unknown")
-            amount   = inv.get("amount", 0)
-            currency = inv.get("currency", "EUR")
-            category = inv.get("category", "Other")
-            month    = inv.get("month", "")
-            year     = inv.get("year", "")
+            date        = inv.get("invoice_date", "unknown date")
+            supplier    = inv.get("supplier_name", "Unknown")
+            amount      = inv.get("amount", 0)
+            tax         = inv.get("tax_amount", 0)
+            currency    = inv.get("currency", "EUR")
+            category    = inv.get("category", "Other")
+            month       = inv.get("month", "")
+            year        = inv.get("year", "")
+            description = inv.get("description", "")
             lines.append(
-                f"  - {supplier} | {date} | {amount} {currency} | {category} | {month} {year}"
+                f"  - {supplier} | {date} | amount: {amount} {currency} | tax: {tax} {currency}"
+                f" | {category} | {month} {year}"
+                + (f" | {description}" if description else "")
             )
 
     if suppliers:

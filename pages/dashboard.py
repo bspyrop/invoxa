@@ -18,13 +18,42 @@ def render() -> None:
     month, year = current_month_year()
 
     # ---- Header ----
-    col_img, col_text = st.columns([1, 8])
-    with col_img:
-        if user.get("photoURL"):
-            st.image(user["photoURL"], width=56)
-    with col_text:
-        st.markdown(f"### Welcome back, {user.get('displayName', 'there')} 👋")
-        st.caption(f"Today: {month} {year}")
+    col_logo, _, col_profile = st.columns([3, 4, 3])
+
+    with col_logo:
+        st.markdown(
+            """
+            <div style="padding:6px 0;">
+              <div style="font-size:2.4rem; line-height:1;">🧾</div>
+              <div style="font-size:1.7rem; font-weight:800; letter-spacing:1px; color:#4a9eff; line-height:1.2; text-shadow: 0 0 12px rgba(74,158,255,0.4);">Invoxa</div>
+              <div style="font-size:0.75rem; color:#9ca3af; letter-spacing:2px; text-transform:uppercase;">Expense Agent</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    with col_profile:
+        photo_url    = user.get("photoURL", "")
+        display_name = user.get("displayName", "there")
+        email        = user.get("email", "")
+        avatar_html  = (
+            f'<img src="{photo_url}" width="36" height="36" '
+            f'style="border-radius:50%; margin-right:10px; vertical-align:middle;"/>'
+            if photo_url else ""
+        )
+        st.markdown(
+            f"""
+            <div style="display:flex; align-items:center; justify-content:flex-end; padding:6px 0;">
+              {avatar_html}
+              <div style="text-align:right;">
+                <div style="font-size:0.78rem; font-weight:600; color:#d1d5db;">Welcome back, {display_name} 👋</div>
+                <div style="font-size:0.70rem; color:#6b7280;">{email}</div>
+                <div style="font-size:0.68rem; color:#4b5563;">{month} {year}</div>
+              </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
     st.markdown("---")
 

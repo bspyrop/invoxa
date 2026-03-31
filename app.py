@@ -20,7 +20,7 @@ st.set_page_config(
     page_title="Invoxa — Expense Agent",
     page_icon="🧾",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="collapsed",
 )
 
 # Hide Streamlit's auto-generated multipage navigation (we use our own)
@@ -74,9 +74,6 @@ if "current_page" not in st.session_state:
     st.session_state["current_page"] = "Dashboard"
 
 with st.sidebar:
-    st.markdown("## 🧾 Invoxa")
-    st.markdown("---")
-
     current = st.session_state.get("current_page", "Dashboard")
     selected_page = st.radio(
         "Navigation",

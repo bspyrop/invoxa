@@ -37,6 +37,9 @@ logs/
 *.temp
 /tmp/
 
+# LangGraph Studio runtime cache
+.langgraph_api/
+
 # Environment
 .env
 .env.local

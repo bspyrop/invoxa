@@ -42,6 +42,8 @@ Managing business invoices manually is slow, error-prone, and hard to audit. Inv
 
 ## 2. Core Functionality
 
+![Invoxa Architecture](project-diagram.svg)
+
 ### 2.1 Invoice Upload & Extraction (Upload Invoice page)
 
 The primary pipeline runs through a LangGraph `CompiledStateGraph`. When a user uploads a file:
@@ -189,6 +191,8 @@ Streamlit (UI) ──► graph.invoke() ──► LangGraph Pipeline
 ```
 
 ### Agent Framework: LangGraph
+
+![Agent Graph](agent-graph.svg)
 
 - `StateGraph` with `AgentState` TypedDict for typed state management
 - `MemorySaver` checkpointer for thread-based HITL state persistence

@@ -250,6 +250,37 @@ Every OpenAI API call is metered:
 - Zero-code tracing: every `graph.invoke()` automatically sends node-by-node traces to LangSmith
 - `langgraph.json` created for LangGraph Studio local debugging (`langgraph dev`)
 
+### Local Debugging: LangGraph Studio
+
+`langgraph.json` in the project root registers the compiled graph for LangGraph Studio:
+
+```json
+{
+  "dependencies": ["."],
+  "graphs": { "invoxa": "./agent/graph.py:graph" },
+  "env": ".streamlit/secrets.toml"
+}
+```
+
+**Running the local debug server:**
+
+```bash
+pip install "langgraph-cli[inmem]"
+langgraph dev   # starts server at http://localhost:2024
+```
+
+Then open the **LangGraph Studio** desktop app and connect to `http://localhost:2024`.
+
+**What LangGraph Studio shows:**
+
+| Feature | Details |
+|---|---|
+| **Visual graph diagram** | Live rendering of all nodes and edges, matching the pipeline in Section 2 |
+| **Node-by-node execution** | Step through each node (upload → extract → suggest → HITL → organize → anomalies) |
+| **State inspector** | Full `AgentState` snapshot after every node — inspect extracted fields, warnings, filenames |
+| **HITL controls** | Trigger and resume `interrupt_before` pauses directly in the Studio UI without Streamlit |
+| **Run replay** | Re-run any previous invocation from a saved checkpoint for debugging |
+
 ### Authentication
 
 - Firebase Authentication with Google OAuth2

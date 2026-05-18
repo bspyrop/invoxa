@@ -110,29 +110,6 @@ def render() -> None:
 
     st.markdown("---")
 
-    # ---- Charts ----
-    col_left, col_right = st.columns(2)
-
-    with col_left:
-        st.subheader("By Category")
-        if stats["category_breakdown"]:
-            df_cat = pd.DataFrame(
-                list(stats["category_breakdown"].items()),
-                columns=["Category", "Amount"],
-            ).set_index("Category")
-            st.bar_chart(df_cat, height=300)
-
-    with col_right:
-        st.subheader("Top Suppliers")
-        if stats["supplier_breakdown"]:
-            top_5 = dict(list(stats["supplier_breakdown"].items())[:5])
-            df_sup = pd.DataFrame(
-                list(top_5.items()), columns=["Supplier", "Amount"]
-            ).set_index("Supplier")
-            st.bar_chart(df_sup, height=300)
-
-    st.markdown("---")
-
     # ---- Year summary chart ----
     st.subheader(f"Month-over-Month — {year}")
     try:

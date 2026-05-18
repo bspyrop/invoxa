@@ -24,6 +24,9 @@
     <marker id="arrow-teal" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
       <polygon points="0 0, 8 3, 0 6" fill="#2dd4bf"/>
     </marker>
+    <marker id="arrow-cyan" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2dd4bf"/>
+    </marker>
     <marker id="arrow-red" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
       <polygon points="0 0, 8 3, 0 6" fill="#f87171"/>
     </marker>
@@ -54,8 +57,8 @@
   <rect x="12" y="1034" width="18" height="150" rx="4" fill="#065f46" opacity="0.7"/>
   <text x="21" y="1119" text-anchor="middle" font-size="10" font-weight="600" fill="#6ee7b7" transform="rotate(-90,21,1119)" letter-spacing="1">SERVICES</text>
 
-  <rect x="12" y="1214" width="18" height="160" rx="4" fill="#7f1d1d" opacity="0.7"/>
-  <text x="21" y="1304" text-anchor="middle" font-size="10" font-weight="600" fill="#fca5a5" transform="rotate(-90,21,1304)" letter-spacing="1">EXTERNAL APIs</text>
+  <rect x="12" y="1214" width="18" height="180" rx="4" fill="#7f1d1d" opacity="0.7"/>
+  <text x="21" y="1310" text-anchor="middle" font-size="10" font-weight="600" fill="#fca5a5" transform="rotate(-90,21,1310)" letter-spacing="1">EXTERNAL APIs</text>
 
   <!-- ══════════════════════════════════════
        ROW 1 — UI LAYER
@@ -74,9 +77,9 @@
 
   <rect x="272" y="120" width="240" height="70" rx="8" fill="#172554" stroke="#3b82f6" stroke-width="2"/>
   <text x="392" y="139" text-anchor="middle" font-size="12" font-weight="700" fill="#93c5fd">⬆️ Upload Invoice</text>
-  <text x="392" y="154" text-anchor="middle" font-size="10" fill="#6b7280">Drop file → graph.invoke ×2</text>
-  <text x="392" y="168" text-anchor="middle" font-size="10" fill="#fbbf24">HITL 1: data review · HITL 2: anomaly</text>
-  <text x="392" y="182" text-anchor="middle" font-size="10" fill="#fbbf24">Pause · Confirm / Keep / Discard</text>
+  <text x="392" y="153" text-anchor="middle" font-size="10" fill="#6b7280">File upload tab · Gmail scan tab</text>
+  <text x="392" y="166" text-anchor="middle" font-size="10" fill="#fbbf24">HITL 1: data review · HITL 2: anomaly</text>
+  <text x="392" y="179" text-anchor="middle" font-size="10" fill="#2dd4bf">Gmail: classify → import → graph.invoke</text>
 
   <rect x="528" y="120" width="220" height="70" rx="8" fill="#172554" stroke="#3b82f6" stroke-width="1.5"/>
   <text x="638" y="139" text-anchor="middle" font-size="12" font-weight="700" fill="#93c5fd">📊 Monthly Report</text>
@@ -284,107 +287,136 @@
   <!-- ══════════════════════════════════════
        ROW 4 — SERVICES
   ══════════════════════════════════════ -->
-  <rect x="40" y="1034" width="460" height="150" rx="10" fill="#052e16" stroke="#16a34a" stroke-width="2" filter="url(#shadow)"/>
-  <rect x="40" y="1034" width="460" height="26" rx="10" fill="#065f46" opacity="0.7"/>
-  <rect x="40" y="1048" width="460" height="12" rx="0" fill="#065f46" opacity="0.7"/>
-  <text x="270" y="1052" text-anchor="middle" font-size="12" font-weight="700" fill="#bbf7d0">🔥  services/firestore.py</text>
-  <text x="56" y="1074" font-size="10" fill="#4ade80">save_invoice · delete_invoice · get_invoice</text>
-  <text x="56" y="1088" font-size="10" fill="#6b7280">get_invoices_for_month · get_invoices_for_year</text>
-  <text x="56" y="1102" font-size="10" fill="#6b7280">get_recent_invoices (injects _doc_id)</text>
-  <text x="56" y="1116" font-size="10" fill="#4ade80">_update_supplier_memory() — upserted on every save</text>
-  <text x="56" y="1130" font-size="10" fill="#6b7280">get_all_invoices · get_all_suppliers</text>
-  <text x="56" y="1144" font-size="10" fill="#6b7280">save_categories · get_categories · log_error</text>
-  <text x="56" y="1158" font-size="10" fill="#6b7280">Credentials via [firebase_admin] TOML section</text>
-  <text x="56" y="1172" font-size="10" fill="#6b7280">users/{uid}/invoices · suppliers · logs · profile</text>
+  <rect x="40" y="1034" width="340" height="150" rx="10" fill="#052e16" stroke="#16a34a" stroke-width="2" filter="url(#shadow)"/>
+  <rect x="40" y="1034" width="340" height="26" rx="10" fill="#065f46" opacity="0.7"/>
+  <rect x="40" y="1048" width="340" height="12" rx="0" fill="#065f46" opacity="0.7"/>
+  <text x="210" y="1052" text-anchor="middle" font-size="12" font-weight="700" fill="#bbf7d0">🔥  services/firestore.py</text>
+  <text x="48" y="1074" font-size="10" fill="#4ade80">save_invoice · delete_invoice · get_invoice</text>
+  <text x="48" y="1088" font-size="10" fill="#6b7280">get_invoices_for_month · get_invoices_for_year</text>
+  <text x="48" y="1102" font-size="10" fill="#6b7280">get_recent_invoices (injects _doc_id)</text>
+  <text x="48" y="1116" font-size="10" fill="#4ade80">_update_supplier_memory() — upserted on save</text>
+  <text x="48" y="1130" font-size="10" fill="#6b7280">get_all_invoices · get_all_suppliers</text>
+  <text x="48" y="1144" font-size="10" fill="#6b7280">save_categories · get_categories · log_error</text>
+  <text x="48" y="1158" font-size="10" fill="#6b7280">users/{uid}/invoices · suppliers · logs</text>
+  <text x="48" y="1172" font-size="10" fill="#6b7280">calc_ai_cost · log_ai_usage</text>
 
-  <rect x="516" y="1034" width="460" height="150" rx="10" fill="#052e16" stroke="#16a34a" stroke-width="2" filter="url(#shadow)"/>
-  <rect x="516" y="1034" width="460" height="26" rx="10" fill="#065f46" opacity="0.7"/>
-  <rect x="516" y="1048" width="460" height="12" rx="0" fill="#065f46" opacity="0.7"/>
-  <text x="746" y="1052" text-anchor="middle" font-size="12" font-weight="700" fill="#bbf7d0">☁️  services/google_drive.py</text>
-  <text x="532" y="1074" font-size="10" fill="#4ade80">upload_file · delete_file · download_file</text>
-  <text x="532" y="1088" font-size="10" fill="#6b7280">get_or_create_folder · find_folder · get_month_folder_id</text>
-  <text x="532" y="1102" font-size="10" fill="#6b7280">list_invoices_in_folder</text>
-  <text x="532" y="1116" font-size="10" fill="#4ade80">rename_and_move_file — atomic rename + move</text>
-  <text x="532" y="1130" font-size="10" fill="#6b7280">Drive structure: Expenses/{Month YYYY}/{filename}.ext</text>
-  <text x="532" y="1144" font-size="10" fill="#6b7280">@retry tenacity (HttpError, 3 attempts)</text>
+  <rect x="396" y="1034" width="340" height="150" rx="10" fill="#052e16" stroke="#16a34a" stroke-width="2" filter="url(#shadow)"/>
+  <rect x="396" y="1034" width="340" height="26" rx="10" fill="#065f46" opacity="0.7"/>
+  <rect x="396" y="1048" width="340" height="12" rx="0" fill="#065f46" opacity="0.7"/>
+  <text x="566" y="1052" text-anchor="middle" font-size="12" font-weight="700" fill="#bbf7d0">☁️  services/google_drive.py</text>
+  <text x="404" y="1074" font-size="10" fill="#4ade80">upload_file · delete_file · download_file</text>
+  <text x="404" y="1088" font-size="10" fill="#6b7280">get_or_create_folder · find_folder</text>
+  <text x="404" y="1102" font-size="10" fill="#6b7280">get_month_folder_id · list_invoices_in_folder</text>
+  <text x="404" y="1116" font-size="10" fill="#4ade80">rename_and_move_file — atomic rename + move</text>
+  <text x="404" y="1130" font-size="10" fill="#6b7280">Drive: Expenses/{Month YYYY}/{filename}.ext</text>
+  <text x="404" y="1144" font-size="10" fill="#6b7280">@retry tenacity (HttpError, 3 attempts)</text>
 
-  <rect x="992" y="1034" width="468" height="150" rx="10" fill="#052e16" stroke="#16a34a" stroke-width="2" filter="url(#shadow)"/>
-  <rect x="992" y="1034" width="468" height="26" rx="10" fill="#065f46" opacity="0.7"/>
-  <rect x="992" y="1048" width="468" height="12" rx="0" fill="#065f46" opacity="0.7"/>
-  <text x="1226" y="1052" text-anchor="middle" font-size="12" font-weight="700" fill="#bbf7d0">📊  services/google_sheets.py</text>
-  <text x="1008" y="1074" font-size="10" fill="#4ade80">get_or_create_spreadsheet · generate_monthly_report</text>
-  <text x="1008" y="1088" font-size="10" fill="#6b7280">Writes invoice table + summary + category + supplier tabs</text>
-  <text x="1008" y="1102" font-size="10" fill="#4ade80">generate_year_summary — cross-month totals</text>
-  <text x="1008" y="1116" font-size="10" fill="#6b7280">remove_sheet1_if_present — clean blank tab</text>
-  <text x="1008" y="1130" font-size="10" fill="#6b7280">format_header_row — bold blue header + auto-resize</text>
-  <text x="1008" y="1144" font-size="10" fill="#6b7280">Spreadsheet saved inside Expenses/ folder in Drive</text>
-  <text x="1008" y="1158" font-size="10" fill="#6b7280">@retry tenacity (HttpError, 3 attempts)</text>
+  <rect x="752" y="1034" width="340" height="150" rx="10" fill="#052e16" stroke="#16a34a" stroke-width="2" filter="url(#shadow)"/>
+  <rect x="752" y="1034" width="340" height="26" rx="10" fill="#065f46" opacity="0.7"/>
+  <rect x="752" y="1048" width="340" height="12" rx="0" fill="#065f46" opacity="0.7"/>
+  <text x="922" y="1052" text-anchor="middle" font-size="12" font-weight="700" fill="#bbf7d0">📊  services/google_sheets.py</text>
+  <text x="760" y="1074" font-size="10" fill="#4ade80">get_or_create_spreadsheet · generate_monthly_report</text>
+  <text x="760" y="1088" font-size="10" fill="#6b7280">Writes invoice table + summary + category tabs</text>
+  <text x="760" y="1102" font-size="10" fill="#4ade80">generate_year_summary — cross-month totals</text>
+  <text x="760" y="1116" font-size="10" fill="#6b7280">remove_sheet1_if_present — clean blank tab</text>
+  <text x="760" y="1130" font-size="10" fill="#6b7280">format_header_row — bold + auto-resize</text>
+  <text x="760" y="1144" font-size="10" fill="#6b7280">Spreadsheet saved inside Expenses/ in Drive</text>
+  <text x="760" y="1158" font-size="10" fill="#6b7280">@retry tenacity (HttpError, 3 attempts)</text>
+
+  <rect x="1108" y="1034" width="352" height="150" rx="10" fill="#061218" stroke="#2dd4bf" stroke-width="2" filter="url(#shadow)"/>
+  <rect x="1108" y="1034" width="352" height="26" rx="10" fill="#164e63" opacity="0.7"/>
+  <rect x="1108" y="1048" width="352" height="12" rx="0" fill="#164e63" opacity="0.7"/>
+  <text x="1284" y="1052" text-anchor="middle" font-size="12" font-weight="700" fill="#a5f3fc">📧  services/gmail_scanner.py</text>
+  <text x="1116" y="1074" font-size="10" fill="#2dd4bf">get_gmail_service · list_candidate_emails</text>
+  <text x="1116" y="1088" font-size="10" fill="#6b7280">Scans unread has:attachment (max 30)</text>
+  <text x="1116" y="1102" font-size="10" fill="#6b7280">-label:invoxa-processed query filter</text>
+  <text x="1116" y="1116" font-size="10" fill="#2dd4bf">download_attachment · label_email_processed</text>
+  <text x="1116" y="1130" font-size="10" fill="#6b7280">get_or_create_label (invoxa-processed)</text>
+  <text x="1116" y="1144" font-size="10" fill="#6b7280">remove_label_from_all — clear import history</text>
+  <text x="1116" y="1158" font-size="10" fill="#6b7280">@retry tenacity (HttpError, 3 attempts)</text>
 
   <!-- Arrows: agent → services -->
-  <line x1="187" y1="1016" x2="187" y2="1032" stroke="#16a34a" stroke-width="1.5" marker-end="url(#arrow-green)"/>
-  <line x1="991" y1="588" x2="700" y2="1032" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrow-green)"/>
-  <line x1="1265" y1="826" x2="1200" y2="1032" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrow-green)"/>
+  <line x1="187" y1="1016" x2="210" y2="1032" stroke="#16a34a" stroke-width="1.5" marker-end="url(#arrow-green)"/>
+  <line x1="991" y1="588" x2="566" y2="1032" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrow-green)"/>
+  <line x1="1265" y1="826" x2="922" y2="1032" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrow-green)"/>
 
   <!-- ══════════════════════════════════════
        ROW 5 — EXTERNAL APIs
   ══════════════════════════════════════ -->
-  <rect x="40" y="1214" width="360" height="160" rx="10" fill="#1a0808" stroke="#dc2626" stroke-width="2" filter="url(#shadow)"/>
-  <rect x="40" y="1214" width="360" height="26" rx="10" fill="#7f1d1d" opacity="0.6"/>
-  <rect x="40" y="1228" width="360" height="10" rx="0" fill="#7f1d1d" opacity="0.6"/>
-  <text x="220" y="1231" text-anchor="middle" font-size="12" font-weight="700" fill="#fecaca">🧠  OpenAI API</text>
-  <text x="220" y="1253" text-anchor="middle" font-size="11" font-weight="600" fill="#f87171">GPT-4o (Vision) — extract_invoice_data</text>
-  <text x="220" y="1267" text-anchor="middle" font-size="10" fill="#6b7280">Invoice image → structured JSON</text>
-  <text x="220" y="1281" text-anchor="middle" font-size="10" fill="#6b7280">Today's date injected · temp=0 · max_tokens=800</text>
-  <text x="220" y="1298" text-anchor="middle" font-size="11" font-weight="600" fill="#f87171">GPT-4o-mini (Chat) — chat_with_expenses</text>
-  <text x="220" y="1312" text-anchor="middle" font-size="10" fill="#6b7280">All invoices + suppliers injected as context</text>
-  <text x="220" y="1326" text-anchor="middle" font-size="10" fill="#6b7280">temp=0.3 · max_tokens=1024 · last 20 turns</text>
-  <text x="220" y="1343" text-anchor="middle" font-size="10" fill="#6b7280">PDF: PyMuPDF (no poppler) → base64 JPEG</text>
-  <text x="220" y="1357" text-anchor="middle" font-size="10" fill="#6b7280">Fallback: PyPDF2 text → text-only prompt</text>
+  <rect x="40" y="1214" width="270" height="178" rx="10" fill="#1a0808" stroke="#dc2626" stroke-width="2" filter="url(#shadow)"/>
+  <rect x="40" y="1214" width="270" height="26" rx="10" fill="#7f1d1d" opacity="0.6"/>
+  <rect x="40" y="1228" width="270" height="10" rx="0" fill="#7f1d1d" opacity="0.6"/>
+  <text x="175" y="1231" text-anchor="middle" font-size="12" font-weight="700" fill="#fecaca">🧠  OpenAI API</text>
+  <text x="175" y="1251" text-anchor="middle" font-size="10" font-weight="600" fill="#f87171">GPT-4o Vision — extract_invoice_data</text>
+  <text x="175" y="1264" text-anchor="middle" font-size="10" fill="#6b7280">Invoice image → JSON · temp=0 · 800 tok</text>
+  <text x="175" y="1277" text-anchor="middle" font-size="10" fill="#6b7280">PyMuPDF → base64 JPEG (fallback PyPDF2)</text>
+  <line x1="48" y1="1285" x2="302" y2="1285" stroke="#374151" stroke-width="0.5"/>
+  <text x="175" y="1298" text-anchor="middle" font-size="10" font-weight="600" fill="#f87171">GPT-4o-mini — chat_with_expenses</text>
+  <text x="175" y="1311" text-anchor="middle" font-size="10" fill="#6b7280">All invoices + suppliers · temp=0.3 · 1024 tok</text>
+  <line x1="48" y1="1320" x2="302" y2="1320" stroke="#374151" stroke-width="0.5"/>
+  <text x="175" y="1333" text-anchor="middle" font-size="10" font-weight="600" fill="#2dd4bf">GPT-4o-mini — classify_email</text>
+  <text x="175" y="1346" text-anchor="middle" font-size="10" fill="#6b7280">subject + sender + filenames</text>
+  <text x="175" y="1359" text-anchor="middle" font-size="10" fill="#6b7280">temp=0 · 60 tok · conf ≥ 0.65</text>
+  <text x="175" y="1372" text-anchor="middle" font-size="10" fill="#6b7280">agent/nodes/classify_email.py</text>
+  <text x="175" y="1385" text-anchor="middle" font-size="10" fill="#6b7280">cost logged to Firestore ai_usage</text>
 
-  <rect x="420" y="1214" width="380" height="160" rx="10" fill="#0a1628" stroke="#3b82f6" stroke-width="2" filter="url(#shadow)"/>
-  <rect x="420" y="1214" width="380" height="26" rx="10" fill="#1d4ed8" opacity="0.5"/>
-  <rect x="420" y="1228" width="380" height="10" rx="0" fill="#1d4ed8" opacity="0.5"/>
-  <text x="610" y="1231" text-anchor="middle" font-size="12" font-weight="700" fill="#bfdbfe">☁️  Google Drive API v3</text>
-  <text x="610" y="1253" text-anchor="middle" font-size="10" fill="#6b7280">upload_file — initial upload (Expenses/ root)</text>
-  <text x="610" y="1267" text-anchor="middle" font-size="10" fill="#6b7280">rename_and_move_file — after HITL 1 confirm</text>
-  <text x="610" y="1281" text-anchor="middle" font-size="10" fill="#6b7280">  → moves to Expenses/{Month YYYY}/{name}.ext</text>
-  <text x="610" y="1295" text-anchor="middle" font-size="10" fill="#6b7280">delete_file — on HITL cancel or HITL 2 discard</text>
-  <text x="610" y="1309" text-anchor="middle" font-size="10" fill="#93c5fd">OAuth2: drive.file scope</text>
-  <text x="610" y="1323" text-anchor="middle" font-size="10" fill="#6b7280">files.create · update · delete · get · list</text>
+  <rect x="326" y="1214" width="270" height="178" rx="10" fill="#0a1628" stroke="#3b82f6" stroke-width="2" filter="url(#shadow)"/>
+  <rect x="326" y="1214" width="270" height="26" rx="10" fill="#1d4ed8" opacity="0.5"/>
+  <rect x="326" y="1228" width="270" height="10" rx="0" fill="#1d4ed8" opacity="0.5"/>
+  <text x="461" y="1231" text-anchor="middle" font-size="12" font-weight="700" fill="#bfdbfe">☁️  Google Drive API v3</text>
+  <text x="461" y="1253" text-anchor="middle" font-size="10" fill="#6b7280">upload_file — initial upload (Expenses/ root)</text>
+  <text x="461" y="1267" text-anchor="middle" font-size="10" fill="#6b7280">rename_and_move_file — after HITL 1 confirm</text>
+  <text x="461" y="1281" text-anchor="middle" font-size="10" fill="#6b7280">→ Expenses/{Month YYYY}/{name}.ext</text>
+  <text x="461" y="1295" text-anchor="middle" font-size="10" fill="#6b7280">delete_file — on cancel or HITL 2 discard</text>
+  <text x="461" y="1309" text-anchor="middle" font-size="10" fill="#93c5fd">OAuth2: drive.file scope</text>
+  <text x="461" y="1323" text-anchor="middle" font-size="10" fill="#6b7280">files.create · update · delete · get · list</text>
 
-  <rect x="820" y="1214" width="360" height="160" rx="10" fill="#0a1628" stroke="#22c55e" stroke-width="2" filter="url(#shadow)"/>
-  <rect x="820" y="1214" width="360" height="26" rx="10" fill="#15803d" opacity="0.5"/>
-  <rect x="820" y="1228" width="360" height="10" rx="0" fill="#15803d" opacity="0.5"/>
-  <text x="1000" y="1231" text-anchor="middle" font-size="12" font-weight="700" fill="#bbf7d0">📊  Google Sheets API v4</text>
-  <text x="1000" y="1253" text-anchor="middle" font-size="10" fill="#6b7280">Spreadsheet: "Expenses Report {year}"</text>
-  <text x="1000" y="1267" text-anchor="middle" font-size="10" fill="#6b7280">Tabs: {Month YYYY} · Year Summary</text>
-  <text x="1000" y="1281" text-anchor="middle" font-size="10" fill="#6b7280">Sheet1 removed after first real tab added</text>
-  <text x="1000" y="1295" text-anchor="middle" font-size="10" fill="#6b7280">Bold blue header · auto-resize columns</text>
-  <text x="1000" y="1309" text-anchor="middle" font-size="10" fill="#4ade80">OAuth2: spreadsheets scope</text>
-  <text x="1000" y="1323" text-anchor="middle" font-size="10" fill="#6b7280">batchUpdate · values.update (USER_ENTERED)</text>
+  <rect x="612" y="1214" width="270" height="178" rx="10" fill="#0a1628" stroke="#22c55e" stroke-width="2" filter="url(#shadow)"/>
+  <rect x="612" y="1214" width="270" height="26" rx="10" fill="#15803d" opacity="0.5"/>
+  <rect x="612" y="1228" width="270" height="10" rx="0" fill="#15803d" opacity="0.5"/>
+  <text x="747" y="1231" text-anchor="middle" font-size="12" font-weight="700" fill="#bbf7d0">📊  Google Sheets API v4</text>
+  <text x="747" y="1253" text-anchor="middle" font-size="10" fill="#6b7280">Spreadsheet: "Expenses Report {year}"</text>
+  <text x="747" y="1267" text-anchor="middle" font-size="10" fill="#6b7280">Tabs: {Month YYYY} · Year Summary</text>
+  <text x="747" y="1281" text-anchor="middle" font-size="10" fill="#6b7280">Sheet1 removed after first real tab added</text>
+  <text x="747" y="1295" text-anchor="middle" font-size="10" fill="#6b7280">Bold blue header · auto-resize columns</text>
+  <text x="747" y="1309" text-anchor="middle" font-size="10" fill="#4ade80">OAuth2: spreadsheets scope</text>
+  <text x="747" y="1323" text-anchor="middle" font-size="10" fill="#6b7280">batchUpdate · values.update (USER_ENTERED)</text>
 
-  <rect x="1200" y="1214" width="260" height="160" rx="10" fill="#1a0a1a" stroke="#f472b6" stroke-width="2" filter="url(#shadow)"/>
-  <rect x="1200" y="1214" width="260" height="26" rx="10" fill="#9d174d" opacity="0.5"/>
-  <rect x="1200" y="1228" width="260" height="10" rx="0" fill="#9d174d" opacity="0.5"/>
-  <text x="1330" y="1231" text-anchor="middle" font-size="12" font-weight="700" fill="#fbcfe8">🔥  Firebase</text>
-  <text x="1330" y="1253" text-anchor="middle" font-size="11" font-weight="600" fill="#f9a8d4">Firebase Auth</text>
-  <text x="1330" y="1267" text-anchor="middle" font-size="10" fill="#6b7280">Google Identity Provider</text>
-  <text x="1330" y="1281" text-anchor="middle" font-size="10" fill="#6b7280">ID token verify (Admin SDK)</text>
-  <text x="1330" y="1298" text-anchor="middle" font-size="11" font-weight="600" fill="#f9a8d4">Firestore</text>
-  <text x="1330" y="1312" text-anchor="middle" font-size="10" fill="#6b7280">invoices · suppliers · logs · categories</text>
-  <text x="1330" y="1326" text-anchor="middle" font-size="10" fill="#6b7280">Long-term memory store</text>
-  <text x="1330" y="1340" text-anchor="middle" font-size="10" fill="#6b7280">[firebase_admin] TOML section</text>
+  <rect x="898" y="1214" width="270" height="178" rx="10" fill="#1a0a1a" stroke="#f472b6" stroke-width="2" filter="url(#shadow)"/>
+  <rect x="898" y="1214" width="270" height="26" rx="10" fill="#9d174d" opacity="0.5"/>
+  <rect x="898" y="1228" width="270" height="10" rx="0" fill="#9d174d" opacity="0.5"/>
+  <text x="1033" y="1231" text-anchor="middle" font-size="12" font-weight="700" fill="#fbcfe8">🔥  Firebase</text>
+  <text x="1033" y="1251" text-anchor="middle" font-size="11" font-weight="600" fill="#f9a8d4">Firebase Auth</text>
+  <text x="1033" y="1265" text-anchor="middle" font-size="10" fill="#6b7280">Google Identity Provider</text>
+  <text x="1033" y="1279" text-anchor="middle" font-size="10" fill="#6b7280">ID token verify (Admin SDK)</text>
+  <text x="1033" y="1296" text-anchor="middle" font-size="11" font-weight="600" fill="#f9a8d4">Firestore</text>
+  <text x="1033" y="1310" text-anchor="middle" font-size="10" fill="#6b7280">invoices · suppliers · logs · categories</text>
+  <text x="1033" y="1324" text-anchor="middle" font-size="10" fill="#6b7280">Long-term memory store</text>
+  <text x="1033" y="1338" text-anchor="middle" font-size="10" fill="#6b7280">[firebase_admin] TOML section</text>
+
+  <rect x="1184" y="1214" width="276" height="178" rx="10" fill="#061218" stroke="#2dd4bf" stroke-width="2" filter="url(#shadow)"/>
+  <rect x="1184" y="1214" width="276" height="26" rx="10" fill="#164e63" opacity="0.6"/>
+  <rect x="1184" y="1228" width="276" height="10" rx="0" fill="#164e63" opacity="0.6"/>
+  <text x="1322" y="1231" text-anchor="middle" font-size="12" font-weight="700" fill="#a5f3fc">📧  Gmail API v1</text>
+  <text x="1322" y="1253" text-anchor="middle" font-size="10" fill="#6b7280">users.messages.list — scan inbox</text>
+  <text x="1322" y="1267" text-anchor="middle" font-size="10" fill="#6b7280">users.messages.get — fetch headers</text>
+  <text x="1322" y="1281" text-anchor="middle" font-size="10" fill="#6b7280">users.messages.attachments.get</text>
+  <text x="1322" y="1295" text-anchor="middle" font-size="10" fill="#6b7280">users.messages.modify — add label</text>
+  <text x="1322" y="1309" text-anchor="middle" font-size="10" fill="#6b7280">users.labels.list / create</text>
+  <text x="1322" y="1323" text-anchor="middle" font-size="10" fill="#2dd4bf">OAuth2: gmail.readonly + gmail.modify</text>
+  <text x="1322" y="1337" text-anchor="middle" font-size="10" fill="#6b7280">Label applied: invoxa-processed</text>
 
   <!-- Arrows: services → external APIs -->
-  <line x1="270" y1="1184" x2="220" y2="1212" stroke="#dc2626" stroke-width="1.5" marker-end="url(#arrow-red)"/>
-  <line x1="746" y1="1184" x2="610" y2="1212" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#arrow-blue)"/>
-  <line x1="1226" y1="1184" x2="1000" y2="1212" stroke="#22c55e" stroke-width="1.5" marker-end="url(#arrow-green)"/>
-  <line x1="270" y1="1184" x2="1280" y2="1212" stroke="#f472b6" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arrow-gray)"/>
+  <line x1="210" y1="1184" x2="175" y2="1212" stroke="#dc2626" stroke-width="1.5" marker-end="url(#arrow-red)"/>
+  <line x1="566" y1="1184" x2="461" y2="1212" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#arrow-blue)"/>
+  <line x1="922" y1="1184" x2="747" y2="1212" stroke="#22c55e" stroke-width="1.5" marker-end="url(#arrow-green)"/>
+  <line x1="210" y1="1184" x2="1033" y2="1212" stroke="#f472b6" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arrow-gray)"/>
+  <line x1="1284" y1="1184" x2="1322" y2="1212" stroke="#2dd4bf" stroke-width="1.5" marker-end="url(#arrow-teal)"/>
 
   <!-- ══════════════════════════════════════
        LEGEND
   ══════════════════════════════════════ -->
-  <rect x="1310" y="220" width="148" height="420" rx="10" fill="#111827" stroke="#374151" stroke-width="1.5"/>
+  <rect x="1310" y="220" width="148" height="500" rx="10" fill="#111827" stroke="#374151" stroke-width="1.5"/>
   <text x="1384" y="240" text-anchor="middle" font-size="12" font-weight="700" fill="#d1d5db">Legend</text>
   <line x1="1318" y1="246" x2="1450" y2="246" stroke="#374151" stroke-width="0.8"/>
 
@@ -398,31 +430,35 @@
   <text x="1342" y="327" font-size="10" fill="#9ca3af">Services</text>
   <rect x="1323" y="336" width="12" height="12" rx="2" fill="#7f1d1d"/>
   <text x="1342" y="347" font-size="10" fill="#9ca3af">External APIs</text>
+  <rect x="1323" y="356" width="12" height="12" rx="2" fill="#061218" stroke="#2dd4bf" stroke-width="1"/>
+  <text x="1342" y="367" font-size="10" fill="#2dd4bf">Gmail service/API</text>
 
-  <line x1="1318" y1="358" x2="1450" y2="358" stroke="#374151" stroke-width="0.5"/>
+  <line x1="1318" y1="378" x2="1450" y2="378" stroke="#374151" stroke-width="0.5"/>
 
-  <line x1="1323" y1="370" x2="1348" y2="370" stroke="#fb923c" stroke-width="2" marker-end="url(#arrow-orange)"/>
-  <text x="1355" y="374" font-size="10" fill="#9ca3af">UI → graph</text>
-  <line x1="1323" y1="390" x2="1348" y2="390" stroke="#fbbf24" stroke-width="2" marker-end="url(#arrow-yellow)"/>
-  <text x="1355" y="394" font-size="10" fill="#9ca3af">HITL flow</text>
-  <line x1="1323" y1="410" x2="1348" y2="410" stroke="#16a34a" stroke-width="2" marker-end="url(#arrow-green)"/>
-  <text x="1355" y="414" font-size="10" fill="#9ca3af">Node → service</text>
-  <line x1="1323" y1="430" x2="1348" y2="430" stroke="#8b5cf6" stroke-width="2" marker-end="url(#arrow-purple)"/>
-  <text x="1355" y="434" font-size="10" fill="#9ca3af">Auth flow</text>
-  <line x1="1323" y1="450" x2="1348" y2="450" stroke="#374151" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrow-gray)"/>
-  <text x="1355" y="454" font-size="10" fill="#9ca3af">Indirect</text>
-  <line x1="1323" y1="470" x2="1348" y2="470" stroke="#dc2626" stroke-width="2" marker-end="url(#arrow-red)"/>
-  <text x="1355" y="474" font-size="10" fill="#9ca3af">→ External API</text>
+  <line x1="1323" y1="390" x2="1348" y2="390" stroke="#fb923c" stroke-width="2" marker-end="url(#arrow-orange)"/>
+  <text x="1355" y="394" font-size="10" fill="#9ca3af">UI → graph</text>
+  <line x1="1323" y1="410" x2="1348" y2="410" stroke="#fbbf24" stroke-width="2" marker-end="url(#arrow-yellow)"/>
+  <text x="1355" y="414" font-size="10" fill="#9ca3af">HITL flow</text>
+  <line x1="1323" y1="430" x2="1348" y2="430" stroke="#16a34a" stroke-width="2" marker-end="url(#arrow-green)"/>
+  <text x="1355" y="434" font-size="10" fill="#9ca3af">Node → service</text>
+  <line x1="1323" y1="450" x2="1348" y2="450" stroke="#8b5cf6" stroke-width="2" marker-end="url(#arrow-purple)"/>
+  <text x="1355" y="454" font-size="10" fill="#9ca3af">Auth flow</text>
+  <line x1="1323" y1="470" x2="1348" y2="470" stroke="#374151" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrow-gray)"/>
+  <text x="1355" y="474" font-size="10" fill="#9ca3af">Indirect</text>
+  <line x1="1323" y1="490" x2="1348" y2="490" stroke="#dc2626" stroke-width="2" marker-end="url(#arrow-red)"/>
+  <text x="1355" y="494" font-size="10" fill="#9ca3af">→ External API</text>
+  <line x1="1323" y1="510" x2="1348" y2="510" stroke="#2dd4bf" stroke-width="2" marker-end="url(#arrow-teal)"/>
+  <text x="1355" y="514" font-size="10" fill="#2dd4bf">→ Gmail API</text>
 
-  <line x1="1318" y1="486" x2="1450" y2="486" stroke="#374151" stroke-width="0.5"/>
-  <text x="1384" y="502" text-anchor="middle" font-size="9" fill="#fbbf24">HITL Upload Flow:</text>
-  <text x="1384" y="516" text-anchor="middle" font-size="9" fill="#6b7280">1. invoke → extract</text>
-  <text x="1384" y="530" text-anchor="middle" font-size="9" fill="#6b7280">2. ⏸ HITL 1 review</text>
-  <text x="1384" y="544" text-anchor="middle" font-size="9" fill="#6b7280">3. update_state</text>
-  <text x="1384" y="558" text-anchor="middle" font-size="9" fill="#6b7280">4. invoke(None)</text>
-  <text x="1384" y="572" text-anchor="middle" font-size="9" fill="#6b7280">5. rename + check</text>
-  <text x="1384" y="586" text-anchor="middle" font-size="9" fill="#fb923c">6. ⏸ HITL 2 anomaly</text>
-  <text x="1384" y="600" text-anchor="middle" font-size="9" fill="#6b7280">   Keep → done / Discard</text>
-  <text x="1384" y="614" text-anchor="middle" font-size="9" fill="#4ecb71">✓ No anomalies → done</text>
+  <line x1="1318" y1="526" x2="1450" y2="526" stroke="#374151" stroke-width="0.5"/>
+  <text x="1384" y="542" text-anchor="middle" font-size="9" fill="#fbbf24">HITL Upload Flow:</text>
+  <text x="1384" y="556" text-anchor="middle" font-size="9" fill="#6b7280">1. invoke → extract</text>
+  <text x="1384" y="570" text-anchor="middle" font-size="9" fill="#6b7280">2. ⏸ HITL 1 review</text>
+  <text x="1384" y="584" text-anchor="middle" font-size="9" fill="#6b7280">3. update_state</text>
+  <text x="1384" y="598" text-anchor="middle" font-size="9" fill="#6b7280">4. invoke(None)</text>
+  <text x="1384" y="612" text-anchor="middle" font-size="9" fill="#6b7280">5. rename + check</text>
+  <text x="1384" y="626" text-anchor="middle" font-size="9" fill="#fb923c">6. ⏸ HITL 2 anomaly</text>
+  <text x="1384" y="640" text-anchor="middle" font-size="9" fill="#6b7280">   Keep → done / Discard</text>
+  <text x="1384" y="654" text-anchor="middle" font-size="9" fill="#4ecb71">✓ No anomalies → done</text>
 
 </svg>

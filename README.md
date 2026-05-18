@@ -46,7 +46,9 @@ Managing business invoices manually is slow, error-prone, and hard to audit. Inv
 
 ### 2.1 Invoice Upload & Extraction (Upload Invoice page)
 
-The primary pipeline runs through a LangGraph `CompiledStateGraph`. When a user uploads a file:
+The Upload Invoice page has two entry points — manual file upload and Gmail inbox scan — both feeding into the same LangGraph pipeline.
+
+#### 2.1a Manual Upload
 
 1. **File Upload** — Accepts PDF, JPG, JPEG, PNG, WEBP
 2. **Google Drive Upload** — File is immediately saved to the user's `Expenses/` root folder
@@ -62,15 +64,29 @@ The primary pipeline runs through a LangGraph `CompiledStateGraph`. When a user 
 
 **Extraction prompt** is dynamically built with today's date injected to prevent year misidentification (e.g. GPT guessing 2023 instead of 2026), and uses the user's custom category list.
 
+#### 2.1b Gmail Inbox Scan & Import
+
+A dedicated Gmail tab lets users scan their inbox for invoice emails without leaving Invoxa:
+
+1. **Scan** — Fetches up to 30 unread emails with attachments (PDF, JPEG, PNG, WebP, GIF) that haven't been labelled `invoxa-processed` yet, using the Gmail API
+2. **AI Classification** — Each attachment is passed to `gpt-4o-mini` with the email subject, sender, and filename; the model returns `{ is_invoice, confidence }` — only candidates with confidence ≥ 0.65 are shown
+3. **Review cards** — Each candidate renders as a card: filename, sender, subject, date, size, and a colour-coded confidence badge (green ≥ 85%, amber otherwise)
+4. **One-click Import** — Clicking Import downloads the attachment, uploads it to `Expenses/Inbox/` in Drive, labels the Gmail message `invoxa-processed`, saves an import record in Firestore, and routes the file through the full HITL extraction pipeline
+5. **Already-imported guard** — `is_already_imported()` checks Firestore before classification so previously imported attachments are silently skipped
+
+The classification logic lives in `agent/nodes/classify_email.py` with its prompt in `agent/prompts/email_classification_prompt.py`, following the same node/prompt pattern as the rest of the agent.
+
 ### 2.2 Human-in-the-Loop (HITL) — Two Interrupt Points
 
 **HITL 1 — Data Review (before rename_and_organize node)**
 
-After extraction the graph pauses via `interrupt_before=["rename_and_organize"]`. Streamlit renders a review form where the user can:
+After extraction the graph pauses via `interrupt_before=["rename_and_organize"]`. Streamlit renders a two-column review screen where the user can:
 - Edit any extracted field (supplier, date, amount, tax, currency, description)
 - Select or create a new category on the fly
 - Customise the suggested filename
 - Confirm (resumes graph) or Cancel (deletes Drive file + Firestore record)
+
+The right column shows a live **document preview** alongside the form: images render with `st.image`, PDFs are embedded via a base64 `<iframe>` — so the user can cross-check extracted fields against the original document without switching tabs.
 
 On confirm, `graph.update_state()` injects the user's edits and `graph.invoke(None)` resumes the graph from the interrupt checkpoint.
 
@@ -124,6 +140,7 @@ The `chat_with_expenses` node provides a natural language interface:
 - Maintains a 20-turn conversation history
 - Answers questions like "What did I spend on travel this year?" or "Which supplier costs the most?"
 - Tax amounts, descriptions, and all invoice fields are included in context
+- **Clear Conversation** button resets the history in one click, starting a fresh context without reloading the page
 
 ### 2.7 Supplier Long-Term Memory
 
@@ -207,6 +224,7 @@ Streamlit (UI) ──► graph.invoke() ──► LangGraph Pipeline
 |---|---|---|---|
 | `gpt-4o` | extract_invoice_data | temp=0, max_tokens=800 | Invoice vision extraction |
 | `gpt-4o-mini` | chat_with_expenses | temp=0.3, max_tokens=1024 | Expense Q&A |
+| `gpt-4o-mini` | classify_email | temp=0, max_tokens=60 | Gmail invoice classification |
 
 ### Memory
 
@@ -338,10 +356,16 @@ langgraph dev  # then open LangGraph Studio app → http://localhost:2024
 1. Open Upload Invoice page
 2. Drag and drop a PDF or image
 3. Wait for GPT-4o to extract data (~3–5 seconds)
-4. Review and edit any fields in the HITL form
+4. Review and edit any fields in the HITL form — the original document is previewed side by side
 5. Select or create a category
 6. Click Confirm — file is moved to `Expenses/March 2026/` in Drive
 7. If a duplicate is detected, choose Keep or Discard
+
+**Import invoices from Gmail:**
+1. Open Upload Invoice page → Check email tab
+2. Click Scan inbox for invoices
+3. Review the candidate cards (sender, subject, confidence score)
+4. Click Import on any card — the attachment is downloaded, uploaded to Drive, and sent through the full extraction + HITL pipeline automatically
 
 **Generate a monthly report:**
 1. Open Monthly Report page

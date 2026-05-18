@@ -109,16 +109,6 @@ def render() -> None:
 
     st.markdown("---")
 
-    # ---- Category breakdown ----
-    if stats["category_breakdown"]:
-        st.subheader(f"Category Breakdown — {month} {year}")
-        import pandas as pd
-        df_cat = pd.DataFrame(
-            list(stats["category_breakdown"].items()),
-            columns=["Category", "Amount"],
-        ).set_index("Category")
-        st.bar_chart(df_cat, height=250)
-
     # ---- Recent activity ----
     st.subheader("Recent Activity")
     try:

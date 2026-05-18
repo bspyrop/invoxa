@@ -155,29 +155,34 @@ def _render_upload(uid: str) -> None:
 # ---------------------------------------------------------------------------
 
 def _render_hitl(uid: str) -> None:
-    snap      = st.session_state.get(_KEY_SNAP, {})
-    extracted = snap.get("extracted_data", [])
-    invoice   = extracted[0] if extracted else {}
-    suggested = snap.get("suggested_filename", "invoice.pdf")
+    import base64
+
+    snap       = st.session_state.get(_KEY_SNAP, {})
+    extracted  = snap.get("extracted_data", [])
+    invoice    = extracted[0] if extracted else {}
+    suggested  = snap.get("suggested_filename", "invoice.pdf")
+    file_bytes = st.session_state.get(_KEY_BYTES)
+    mime_type  = st.session_state.get(_KEY_MIME, "application/pdf")
 
     st.subheader("📋 Review Extracted Data")
 
-    # Category selection lives OUTSIDE the form so selecting triggers a rerun
-    categories   = get_user_categories()
-    options      = categories + ["+ Add new category…"]
-    raw_cat      = invoice.get("category", categories[0])
-    cat_idx      = categories.index(raw_cat) if raw_cat in categories else 0
-    selected_cat = st.selectbox("Category", options, index=cat_idx, key="_hitl_cat")
+    col_left, col_right = st.columns(2)
 
-    new_cat_input = ""
-    if selected_cat == "+ Add new category…":
-        new_cat_input = st.text_input("New category name", placeholder="e.g. Insurance", key="_hitl_new_cat")
+    with col_left:
+        # Category selection lives OUTSIDE the form so selecting triggers a rerun
+        categories   = get_user_categories()
+        options      = categories + ["+ Add new category…"]
+        raw_cat      = invoice.get("category", categories[0])
+        cat_idx      = categories.index(raw_cat) if raw_cat in categories else 0
+        selected_cat = st.selectbox("Category", options, index=cat_idx, key="_hitl_cat")
 
-    st.markdown("---")
+        new_cat_input = ""
+        if selected_cat == "+ Add new category…":
+            new_cat_input = st.text_input("New category name", placeholder="e.g. Insurance", key="_hitl_new_cat")
 
-    with st.form("hitl_review"):
-        c1, c2 = st.columns(2)
-        with c1:
+        st.markdown("---")
+
+        with st.form("hitl_review"):
             supplier = st.text_input("Supplier", value=str(invoice.get("supplier_name") or ""))
             inv_date = st.text_input("Invoice Date (YYYY-MM-DD)", value=str(invoice.get("invoice_date") or ""))
             amount   = st.number_input(
@@ -187,7 +192,6 @@ def _render_hitl(uid: str) -> None:
                 step=0.01,
                 format="%.2f",
             )
-        with c2:
             currency = st.text_input("Currency (ISO)", value=str(invoice.get("currency") or "EUR"), max_chars=3)
             tax      = st.number_input(
                 "Tax Amount",
@@ -196,16 +200,30 @@ def _render_hitl(uid: str) -> None:
                 step=0.01,
                 format="%.2f",
             )
+            description = st.text_input("Description", value=str(invoice.get("description") or ""))
 
-        description = st.text_input("Description", value=str(invoice.get("description") or ""))
+            st.markdown("---")
+            st.caption("The file will be saved with this name inside the correct month folder.")
+            filename = st.text_input("📁 File Name", value=suggested)
 
-        st.markdown("---")
-        st.caption("The file will be saved with this name inside the correct month folder.")
-        filename = st.text_input("📁 File Name", value=suggested)
+            col_yes, col_no = st.columns(2)
+            confirmed = col_yes.form_submit_button("✅ Confirm & Save", type="primary", use_container_width=True)
+            cancelled = col_no.form_submit_button("❌ Cancel & Discard", use_container_width=True)
 
-        col_yes, col_no = st.columns(2)
-        confirmed = col_yes.form_submit_button("✅ Confirm & Save", type="primary", use_container_width=True)
-        cancelled = col_no.form_submit_button("❌ Cancel & Discard", use_container_width=True)
+    with col_right:
+        st.markdown("**Document Preview**")
+        if file_bytes:
+            if mime_type.startswith("image/"):
+                st.image(file_bytes, use_container_width=True)
+            else:
+                b64 = base64.b64encode(file_bytes).decode()
+                st.markdown(
+                    f'<iframe src="data:application/pdf;base64,{b64}" '
+                    f'width="100%" height="700px" type="application/pdf"></iframe>',
+                    unsafe_allow_html=True,
+                )
+        else:
+            st.info("No preview available.")
 
     if confirmed:
         # Resolve category — use new name if "add new" was selected

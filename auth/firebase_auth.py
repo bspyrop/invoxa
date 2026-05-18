@@ -243,6 +243,13 @@ def build_google_credentials_from_token(access_token: str, refresh_token: str):
         token_uri="https://oauth2.googleapis.com/token",
         client_id=st.secrets["GOOGLE_CLIENT_ID"],
         client_secret=st.secrets["GOOGLE_CLIENT_SECRET"],
+        scopes=[
+            "openid",
+            "email",
+            "profile",
+            "https://www.googleapis.com/auth/drive",
+            "https://www.googleapis.com/auth/spreadsheets",
+        ],
     )
 
 

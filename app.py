@@ -42,6 +42,7 @@ _set_langsmith_env()
 import streamlit as st
 
 from auth.firebase_auth import is_authenticated, render_login_page
+from styles.apply_theme import apply_theme
 from utils.session import get_uid, init_session
 
 # ---------------------------------------------------------------------------
@@ -61,6 +62,8 @@ st.markdown(
     "<style>[data-testid='stSidebarNav'] {display: none;}</style>",
     unsafe_allow_html=True,
 )
+
+apply_theme()
 
 # ---------------------------------------------------------------------------
 # Session state initialisation
@@ -86,15 +89,7 @@ if "user_categories" not in st.session_state:
 # Navigation
 # ---------------------------------------------------------------------------
 
-PAGE_ICONS = {
-    "Dashboard":       "🏠",
-    "Upload Invoice":  "⬆️",
-    "Monthly Report":  "📊",
-    "Chat":            "💬",
-    "Settings":        "⚙️",
-}
-
-PAGE_NAMES = list(PAGE_ICONS.keys())
+PAGE_NAMES = ["Dashboard", "Upload Invoice", "Monthly Report", "Chat", "Settings"]
 
 # Handle quick-action nav targets from dashboard buttons
 if "nav_target" in st.session_state:
@@ -107,31 +102,32 @@ if "current_page" not in st.session_state:
     st.session_state["current_page"] = "Dashboard"
 
 with st.sidebar:
+    st.markdown('<span class="sidebar-logo">Invoxa</span>', unsafe_allow_html=True)
+    st.markdown('<span class="sidebar-section-label">Main</span>', unsafe_allow_html=True)
+
     current = st.session_state.get("current_page", "Dashboard")
     selected_page = st.radio(
         "Navigation",
         PAGE_NAMES,
         index=PAGE_NAMES.index(current),
-        format_func=lambda x: f"{PAGE_ICONS[x]}  {x}",
         label_visibility="collapsed",
     )
     if selected_page != current:
         st.session_state["current_page"] = selected_page
         st.rerun()
 
-    st.markdown("---")
+    st.markdown('<span class="sidebar-section-label">Account</span>', unsafe_allow_html=True)
 
-    # Compact user card in sidebar
     user = st.session_state.get("user", {})
-    if user.get("photoURL"):
-        col_p, col_n = st.sidebar.columns([1, 3])
-        with col_p:
-            st.image(user["photoURL"], width=36)
-        with col_n:
-            st.caption(user.get("displayName", ""))
-            st.caption(user.get("email", ""))
-    else:
-        st.sidebar.caption(user.get("email", ""))
+    display_name = user.get("displayName", "")
+    email        = user.get("email", "")
+    st.markdown(
+        f'<div style="padding:10px 0;border-top:0.5px solid #2A3D60;">'
+        f'<div style="font-size:12px;color:#8FA3C7;">Signed in as</div>'
+        f'<div style="font-size:13px;color:#FFFFFF;font-weight:500;margin-top:2px;">'
+        f'{display_name or email}</div></div>',
+        unsafe_allow_html=True,
+    )
 
 # ---------------------------------------------------------------------------
 # Render selected page

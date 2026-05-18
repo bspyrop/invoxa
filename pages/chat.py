@@ -12,6 +12,7 @@ import uuid
 import streamlit as st
 
 from agent.graph import graph
+from styles.apply_theme import apply_theme
 from utils.session import (
     append_chat_message,
     clear_chat_history,
@@ -31,8 +32,21 @@ SUGGESTED_QUESTIONS = [
 
 def render() -> None:
     """Render the Chat with Expenses page."""
-    st.title("💬 Chat with Expenses")
+    apply_theme()
     uid = get_uid()
+
+    # ---- Header ----
+    st.markdown("## Chat with Expenses")
+    st.markdown(
+        '<p style="color:#6B7A99;font-size:13px;margin-top:-10px">'
+        "Ask questions about your expenses in plain language."
+        "</p>",
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        '<hr style="border:none;border-top:0.5px solid #E2E6EF;margin:12px 0 20px">',
+        unsafe_allow_html=True,
+    )
 
     # ---- Suggested questions ----
     st.markdown("##### Suggested questions")
@@ -60,7 +74,7 @@ def render() -> None:
     # ---- Clear button ----
     if history:
         st.markdown("")
-        if st.button("🗑️ Clear Conversation", use_container_width=False):
+        if st.button("Clear Conversation", use_container_width=False, type="secondary"):
             clear_chat_history()
             st.rerun()
 

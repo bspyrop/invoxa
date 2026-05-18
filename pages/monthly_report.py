@@ -12,7 +12,8 @@ import uuid
 import streamlit as st
 import pandas as pd
 
-from agent.graph    import graph
+from agent.graph import graph
+from styles.apply_theme import apply_theme
 from services.firestore import get_invoices_for_month, get_invoices_for_year
 from utils.helpers               import (
     MONTHS,
@@ -31,8 +32,21 @@ from utils.session               import (
 
 def render() -> None:
     """Render the Monthly Report page."""
-    st.title("📊 Monthly Report")
+    apply_theme()
     uid = get_uid()
+
+    # ---- Header ----
+    st.markdown("## Monthly Report")
+    st.markdown(
+        '<p style="color:#6B7A99;font-size:13px;margin-top:-10px">'
+        "Generate and preview your Google Sheets expense report."
+        "</p>",
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        '<hr style="border:none;border-top:0.5px solid #E2E6EF;margin:12px 0 20px">',
+        unsafe_allow_html=True,
+    )
 
     # ---- Month / Year selector ----
     c1, c2, c3 = st.columns([3, 2, 3])
@@ -53,7 +67,7 @@ def render() -> None:
         )
     with c3:
         st.markdown("<br>", unsafe_allow_html=True)
-        gen_btn = st.button("📤 Generate / Refresh Report", type="primary", use_container_width=True)
+        gen_btn = st.button("Generate Report", type="primary", use_container_width=True)
 
     set_selected_month(month)
     set_selected_year(year)
@@ -77,6 +91,7 @@ def render() -> None:
 
     # ---- Summary metrics ----
     st.markdown(f"### {month} {year} — Summary")
+
     m1, m2, m3, m4 = st.columns(4)
     with m1:
         st.metric("Total Expenses", format_amount(stats["total_amount"]))
@@ -90,7 +105,7 @@ def render() -> None:
     st.markdown("---")
 
     # ---- Invoice table ----
-    st.subheader("Invoice Table")
+    st.markdown("### Invoice Table")
     df = pd.DataFrame(
         [
             {
@@ -111,7 +126,7 @@ def render() -> None:
     st.markdown("---")
 
     # ---- Year summary chart ----
-    st.subheader(f"Month-over-Month — {year}")
+    st.markdown(f"### Month-over-Month — {year}")
     try:
         yearly_invoices = get_invoices_for_year(uid, year)
     except Exception:
@@ -141,7 +156,7 @@ def render() -> None:
     report_url = st.session_state.get("report_url")
     if report_url:
         st.success("Report generated successfully!")
-        st.link_button("📄 Open in Google Sheets", report_url, use_container_width=True)
+        st.link_button("Open in Google Sheets", report_url, use_container_width=True)
 
 
 # ---------------------------------------------------------------------------

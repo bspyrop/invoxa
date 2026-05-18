@@ -21,6 +21,8 @@ from typing import Any, Dict, Optional
 import streamlit as st
 
 from agent.graph import graph
+from styles.apply_theme import apply_theme
+from styles.badges import badge
 from services.google_drive import delete_file, get_or_create_folder, upload_file
 from services.firestore import delete_invoice, is_already_imported, save_categories, save_gmail_import
 from utils.helpers import current_month_year
@@ -37,10 +39,21 @@ _KEY_DRIVEID = "_inv_drive_id"   # Drive file ID of the uploaded temp file
 
 
 def render() -> None:
+    apply_theme()
     uid   = get_uid()
     phase = st.session_state.get(_KEY_PHASE)
 
-    st.title("⬆️ Upload Invoice")
+    st.markdown("## Upload Invoice")
+    st.markdown(
+        '<p style="color:#6B7A99;font-size:13px;margin-top:-10px">'
+        "Drop a file or scan your inbox — the agent extracts, you review, then it organises."
+        "</p>",
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        '<hr style="border:none;border-top:0.5px solid #E2E6EF;margin:12px 0 20px">',
+        unsafe_allow_html=True,
+    )
 
     if phase is None:
         tab_upload, tab_gmail = st.tabs(["📁 Upload file", "📧 Check email"])
@@ -252,16 +265,15 @@ def _render_gmail_tab(uid: str) -> None:
         with st.container(border=True):
             col_info, col_btn = st.columns([4, 1])
             with col_info:
-                size_kb    = round(card["size_bytes"] / 1024, 1)
-                conf       = card["confidence"]
-                badge_color = "#16a34a" if conf >= 0.85 else "#d97706"
+                size_kb = round(card["size_bytes"] / 1024, 1)
+                conf    = card["confidence"]
                 st.markdown(f"**{card['filename']}**")
                 st.caption(card["sender"])
                 st.caption(card["subject"][:60])
                 st.caption(f"{card['date']} · {size_kb} KB")
+                conf_variant = "success" if conf >= 0.85 else "warning"
                 st.markdown(
-                    f'<span style="background:{badge_color}; color:white; padding:2px 8px; '
-                    f'border-radius:4px; font-size:0.73rem;">{int(conf * 100)}% confidence</span>',
+                    badge(f"{int(conf * 100)}% confidence", conf_variant),
                     unsafe_allow_html=True,
                 )
             with col_btn:
@@ -391,7 +403,7 @@ def _render_hitl(uid: str) -> None:
     file_bytes = st.session_state.get(_KEY_BYTES)
     mime_type  = st.session_state.get(_KEY_MIME, "application/pdf")
 
-    st.subheader("📋 Review Extracted Data")
+    st.markdown("### Review Extracted Data")
 
     col_left, col_right = st.columns(2)
 
@@ -434,8 +446,8 @@ def _render_hitl(uid: str) -> None:
             filename = st.text_input("📁 File Name", value=suggested)
 
             col_yes, col_no = st.columns(2)
-            confirmed = col_yes.form_submit_button("✅ Confirm & Save", type="primary", use_container_width=True)
-            cancelled = col_no.form_submit_button("❌ Cancel & Discard", use_container_width=True)
+            confirmed = col_yes.form_submit_button("Confirm & Save", type="primary", use_container_width=True)
+            cancelled = col_no.form_submit_button("Cancel & Discard", use_container_width=True)
 
     with col_right:
         st.markdown("**Document Preview**")
@@ -499,7 +511,7 @@ def _render_hitl(uid: str) -> None:
         st.session_state[_KEY_SNAP] = result
 
         warnings = result.get("anomaly_warnings") or []
-        with st.expander(f"🔍 Debug — anomaly_warnings ({len(warnings)} found)", expanded=True):
+        with st.expander(f"Debug — anomaly_warnings ({len(warnings)} found)", expanded=True):
             st.json(warnings)
 
         # Route to anomaly HITL if any warnings were raised
@@ -538,7 +550,7 @@ def _render_anomaly_hitl(uid: str) -> None:
     extracted = snap.get("extracted_data", [])
     inv = extracted[0] if extracted else {}
 
-    st.subheader("⚠️ Anomalies Detected")
+    st.markdown("### Anomalies Detected")
     st.markdown(
         f"**{inv.get('supplier_name', '—')}** · "
         f"{inv.get('amount', 0)} {inv.get('currency', 'EUR')} · "
@@ -547,16 +559,14 @@ def _render_anomaly_hitl(uid: str) -> None:
     st.markdown("---")
 
     for w in warnings:
-        wtype = w.get("type", "")
-        icon  = "🔴" if wtype == "duplicate" else "🟡"
-        st.warning(f"{icon} {w.get('message', '')}")
+        st.warning(w.get("message", ""))
 
     st.markdown("---")
     st.markdown("Do you want to **keep** this invoice or **discard** it?")
 
     col_keep, col_discard = st.columns(2)
-    keep    = col_keep.button("✅ Keep Invoice", type="primary", use_container_width=True)
-    discard = col_discard.button("🗑️ Discard Invoice", use_container_width=True)
+    keep    = col_keep.button("Keep Invoice", type="primary", use_container_width=True)
+    discard = col_discard.button("Discard Invoice", type="secondary", use_container_width=True)
 
     if keep:
         st.session_state[_KEY_PHASE] = "done"
@@ -590,14 +600,14 @@ def _render_done() -> None:
     warnings = snap.get("anomaly_warnings", [])
 
     if renamed:
-        st.success("✅ Invoice processed and organised successfully!")
+        st.success("Invoice processed and organised successfully!")
         for r in renamed:
-            st.markdown(f"📁 `{r.get('new_name', '')}`")
+            st.markdown(f"`{r.get('new_name', '')}`")
     else:
         extracted = snap.get("extracted_data", [])
         if extracted:
             inv = extracted[0]
-            st.success("✅ Invoice data saved.")
+            st.success("Invoice data saved.")
             st.markdown(
                 f"**{inv.get('supplier_name', '—')}** · "
                 f"{inv.get('amount', 0)} {inv.get('currency', 'EUR')} · "
@@ -606,14 +616,12 @@ def _render_done() -> None:
 
     if warnings:
         st.markdown("---")
-        st.subheader("⚠️ Anomaly Warnings")
+        st.markdown("### Anomaly Warnings")
         for w in warnings:
-            wtype = w.get("type", "")
-            icon  = "🔴" if wtype == "duplicate" else "🟡"
-            st.warning(f"{icon} {w.get('message', '')}")
+            st.warning(w.get("message", ""))
 
     st.markdown("---")
-    if st.button("⬆️ Upload Another Invoice", use_container_width=True):
+    if st.button("Upload Another Invoice", use_container_width=True):
         _reset()
         st.rerun()
 

@@ -53,7 +53,7 @@ st.set_page_config(
     page_title="Invoxa — Expense Agent",
     page_icon="🧾",
     layout="wide",
-    initial_sidebar_state="collapsed",
+    initial_sidebar_state="expanded",
 )
 
 
@@ -102,7 +102,11 @@ if "current_page" not in st.session_state:
     st.session_state["current_page"] = "Dashboard"
 
 with st.sidebar:
-    st.markdown('<span class="sidebar-logo">Invoxa</span>', unsafe_allow_html=True)
+    st.markdown(
+        '<span class="sidebar-logo">Invoxa</span>'
+        '<span class="sidebar-tagline">AI-powered expense invoice management</span>',
+        unsafe_allow_html=True,
+    )
     st.markdown('<span class="sidebar-section-label">Main</span>', unsafe_allow_html=True)
 
     current = st.session_state.get("current_page", "Dashboard")

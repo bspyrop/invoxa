@@ -1,15 +1,11 @@
 import streamlit as st
 
 _CSS = """<style>
-/* ── Reset & page ── */
-[data-testid="stAppViewContainer"] {
-    background: #F8F9FC;
-}
+/* ── Page chrome ── */
 [data-testid="stHeader"] {
-    background: #F8F9FC;
     border-bottom: 0.5px solid #E2E6EF;
 }
-#MainMenu, footer, [data-testid="stToolbar"] {
+footer {
     display: none !important;
 }
 
@@ -19,6 +15,22 @@ _CSS = """<style>
     border-right: none;
 }
 [data-testid="stSidebar"] * {
+    color: #8FA3C7 !important;
+}
+
+/* ── Sidebar collapse / reopen toggle ── */
+/* Style only — let Streamlit control display/visibility */
+[data-testid="collapsedControl"] {
+    background-color: #1B2A4A !important;
+    border-radius: 0 6px 6px 0 !important;
+}
+[data-testid="collapsedControl"] button,
+[data-testid="collapsedControl"] svg {
+    color: #FFFFFF !important;
+    fill: #FFFFFF !important;
+    stroke: #FFFFFF !important;
+}
+[data-testid="stSidebarCollapseButton"] button {
     color: #8FA3C7 !important;
 }
 [data-testid="stSidebar"] .st-emotion-cache-1cypcdb,
@@ -70,9 +82,10 @@ p, label, span, div {
     line-height: 1.6;
 }
 
-/* ── Buttons ── */
-[data-testid="stButton"] > button[kind="primary"],
-[data-testid="stButton"] > button:not([kind="secondary"]) {
+/* ── Buttons (Streamlit 1.32+) ── */
+/* The broad "p, span, div { color: #1B2A4A }" rule overrides inherited color
+   on child nodes, so we must target child elements explicitly. */
+[data-testid="stBaseButton-primary"] {
     background: #1B2A4A !important;
     color: #FFFFFF !important;
     border: none !important;
@@ -82,26 +95,35 @@ p, label, span, div {
     padding: 8px 18px !important;
     transition: background 0.15s;
 }
-[data-testid="stButton"] > button:not([kind="secondary"]):hover {
+[data-testid="stBaseButton-primary"] p,
+[data-testid="stBaseButton-primary"] span,
+[data-testid="stBaseButton-primary"] div {
+    color: #FFFFFF !important;
+}
+[data-testid="stBaseButton-primary"]:hover {
     background: #243656 !important;
 }
-[data-testid="stButton"] > button[kind="secondary"] {
-    background: transparent !important;
+/* Secondary / outline */
+[data-testid="stBaseButton-secondary"] {
+    background: #FFFFFF !important;
     color: #1B2A4A !important;
-    border: 0.5px solid #CBD5E8 !important;
+    border: 1px solid #CBD5E8 !important;
     border-radius: 7px !important;
     font-size: 13px !important;
     font-weight: 500 !important;
     padding: 8px 18px !important;
 }
-[data-testid="stButton"] > button[kind="secondary"]:hover {
+[data-testid="stBaseButton-secondary"] p,
+[data-testid="stBaseButton-secondary"] span,
+[data-testid="stBaseButton-secondary"] div {
+    color: #1B2A4A !important;
+}
+[data-testid="stBaseButton-secondary"]:hover {
     background: #F8F9FC !important;
     border-color: #1B2A4A !important;
 }
-
 /* ── Inputs ── */
 [data-testid="stTextInput"] input,
-[data-testid="stSelectbox"] select,
 [data-testid="stTextArea"] textarea {
     background: #FFFFFF !important;
     border: 0.5px solid #E2E6EF !important;
@@ -115,6 +137,23 @@ p, label, span, div {
     border-color: #2DD4A7 !important;
     box-shadow: 0 0 0 3px rgba(45, 212, 167, 0.15) !important;
     outline: none !important;
+}
+
+/* ── Selectbox (Streamlit uses baseweb custom dropdown, not native <select>) ── */
+[data-testid="stSelectbox"] [data-baseweb="select"] {
+    background: #FFFFFF !important;
+    border-radius: 7px !important;
+}
+[data-testid="stSelectbox"] [data-baseweb="select"] > div:first-child {
+    background: #FFFFFF !important;
+    border: 0.5px solid #E2E6EF !important;
+    border-radius: 7px !important;
+    color: #1B2A4A !important;
+    font-size: 14px !important;
+}
+[data-testid="stSelectbox"] [data-baseweb="select"] > div:first-child:focus-within {
+    border-color: #2DD4A7 !important;
+    box-shadow: 0 0 0 3px rgba(45, 212, 167, 0.15) !important;
 }
 
 /* ── File uploader ── */
@@ -225,8 +264,8 @@ p, label, span, div {
 }
 
 /* ── Status widget ── */
-[data-testid="stStatus"] {
-    background: #FFFFFF !important;
+[data-testid="stStatus"],
+[data-testid="stStatusWidget"] {
     border: 0.5px solid #E2E6EF !important;
     border-radius: 10px !important;
 }
@@ -256,12 +295,20 @@ p, label, span, div {
 
 /* ── Sidebar logo area ── */
 .sidebar-logo {
-    font-size: 18px;
-    font-weight: 700;
+    font-size: 26px;
+    font-weight: 800;
     color: #FFFFFF;
     letter-spacing: -0.5px;
-    padding: 8px 0 24px;
+    padding: 8px 0 4px;
     display: block;
+}
+.sidebar-tagline {
+    font-size: 11px;
+    color: #6B84AD;
+    letter-spacing: 0.02em;
+    padding: 0 0 20px;
+    display: block;
+    line-height: 1.4;
 }
 .sidebar-section-label {
     font-size: 10px;

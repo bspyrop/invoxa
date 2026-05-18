@@ -8,14 +8,11 @@ classifies them with GPT-4o-mini, downloads attachments, and labels processed em
 from __future__ import annotations
 
 import base64
-import json
 import logging
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List
 
-import streamlit as st
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
-from openai import OpenAI
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
 logger = logging.getLogger(__name__)
@@ -127,53 +124,6 @@ def _extract_attachments(payload: Dict[str, Any]) -> List[Dict[str, Any]]:
             found.extend(_extract_attachments(part))
 
     return found
-
-
-# ---------------------------------------------------------------------------
-# Classification
-# ---------------------------------------------------------------------------
-
-def classify_email_as_invoice(
-    subject: str,
-    sender: str,
-    filenames: List[str],
-) -> Tuple[bool, float]:
-    """
-    Use GPT-4o-mini to decide whether an email likely contains an invoice.
-    Returns (is_invoice, confidence 0.0–1.0).
-    Only email metadata is used — no attachment download at this stage.
-    """
-    client        = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
-    filenames_str = ", ".join(filenames) if filenames else "(none)"
-
-    prompt = (
-        "You classify whether an email contains an invoice, receipt, quote, or purchase order.\n\n"
-        f"Subject: {subject}\n"
-        f"From: {sender}\n"
-        f"Attachment filenames: {filenames_str}\n\n"
-        "Reply ONLY with valid JSON, no explanation:\n"
-        '{"is_invoice": true, "confidence": 0.95}\n\n'
-        "Confidence 1.0 = certain. Classify conservatively — prefer false positives over missing real invoices."
-    )
-
-    try:
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            temperature=0,
-            max_tokens=60,
-            messages=[{"role": "user", "content": prompt}],
-        )
-        text = response.choices[0].message.content.strip()
-        # Strip markdown code fences if present
-        if text.startswith("```"):
-            text = text.split("```")[1]
-            if text.startswith("json"):
-                text = text[4:]
-        data = json.loads(text)
-        return bool(data.get("is_invoice", False)), float(data.get("confidence", 0.0))
-    except Exception as exc:
-        logger.warning("classify_email_as_invoice failed: %s", exc)
-        return False, 0.0
 
 
 # ---------------------------------------------------------------------------

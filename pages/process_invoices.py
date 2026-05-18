@@ -172,11 +172,8 @@ def _render_upload(uid: str) -> None:
 # ---------------------------------------------------------------------------
 
 def _render_gmail_tab(uid: str) -> None:
-    from services.gmail_scanner import (
-        classify_email_as_invoice,
-        get_gmail_service,
-        list_candidate_emails,
-    )
+    from agent.nodes.classify_email import classify_email_as_invoice
+    from services.gmail_scanner import get_gmail_service, list_candidate_emails
 
     creds = st.session_state.get("google_credentials")
     if not creds:
@@ -223,6 +220,7 @@ def _render_gmail_tab(uid: str) -> None:
                             email["subject"],
                             email["sender"],
                             [att["filename"]],
+                            uid=uid,
                         )
                     except Exception:
                         continue

@@ -134,7 +134,15 @@ def render() -> None:
                 year_inv  = inv.get("year", "")
                 inv_id    = inv.get("_doc_id") or inv.get("drive_file_id") or str(idx)
 
-                st.write(f"**{supplier}** — {category} — {format_amount(float(amount or 0), currency)}")
+                source_badge = (
+                    ' <span style="background:#1d4ed8; color:white; padding:1px 7px; '
+                    'border-radius:4px; font-size:0.72rem; font-weight:600;">via Gmail</span>'
+                    if inv.get("source") == "gmail" else ""
+                )
+                st.markdown(
+                    f"**{supplier}** — {category} — {format_amount(float(amount or 0), currency)}{source_badge}",
+                    unsafe_allow_html=True,
+                )
                 st.caption(f"{inv_date} · {month_inv} {year_inv}")
                 renamed = inv.get("renamed_filename", "")
                 if renamed:

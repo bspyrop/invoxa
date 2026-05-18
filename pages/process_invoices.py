@@ -22,7 +22,7 @@ import streamlit as st
 
 from agent.graph import graph
 from services.google_drive import delete_file, get_or_create_folder, upload_file
-from services.firestore import delete_invoice, save_categories
+from services.firestore import delete_invoice, is_already_imported, save_categories, save_gmail_import
 from utils.helpers import current_month_year
 from utils.session import get_uid, get_user_categories, set_user_categories
 
@@ -43,7 +43,11 @@ def render() -> None:
     st.title("⬆️ Upload Invoice")
 
     if phase is None:
-        _render_upload(uid)
+        tab_upload, tab_gmail = st.tabs(["📁 Upload file", "📧 Check email"])
+        with tab_upload:
+            _render_upload(uid)
+        with tab_gmail:
+            _render_gmail_tab(uid)
     elif phase == "hitl":
         st.caption("Review the extracted data before saving.")
         _render_hitl(uid)
@@ -148,6 +152,229 @@ def _render_upload(uid: str) -> None:
         st.session_state[_KEY_PHASE] = "done"
 
     st.rerun()
+
+
+# ---------------------------------------------------------------------------
+# Phase 1b — Gmail scan tab
+# ---------------------------------------------------------------------------
+
+def _render_gmail_tab(uid: str) -> None:
+    from services.gmail_scanner import (
+        classify_email_as_invoice,
+        get_gmail_service,
+        list_candidate_emails,
+    )
+
+    creds = st.session_state.get("google_credentials")
+    if not creds:
+        st.warning("Gmail connection error. Please sign out and sign in again.")
+        return
+
+    try:
+        service = get_gmail_service(creds)
+    except Exception as exc:
+        st.error(f"Could not build Gmail service: {exc}")
+        return
+
+    st.caption("Scan your Gmail inbox to find unread emails with invoice attachments.")
+
+    if st.button("Scan inbox for invoices", key="_gmail_scan_btn"):
+        with st.status("Scanning inbox…", expanded=True) as status:
+            try:
+                all_emails = list_candidate_emails(service)
+            except Exception as exc:
+                status.update(label="Gmail scan failed", state="error")
+                err = str(exc)
+                if "accessNotConfigured" in err or "has not been used" in err or "disabled" in err:
+                    st.error(
+                        "Gmail API is not enabled in your Google Cloud project. "
+                        "Go to **Google Cloud Console → APIs & Services → Library** "
+                        "and enable the **Gmail API**."
+                    )
+                elif "invalid_grant" in err or "401" in err:
+                    st.warning("Session expired. Please sign out and sign in again.")
+                else:
+                    st.error(f"Gmail error: {exc}")
+                return
+
+            candidates = []
+            any_non_imported = False
+
+            for email in all_emails:
+                for att in email["attachments"]:
+                    if is_already_imported(uid, email["msg_id"], att["attachment_id"]):
+                        continue
+                    any_non_imported = True
+                    try:
+                        is_inv, conf = classify_email_as_invoice(
+                            email["subject"],
+                            email["sender"],
+                            [att["filename"]],
+                        )
+                    except Exception:
+                        continue
+                    if is_inv and conf >= 0.65:
+                        candidates.append({
+                            "msg_id":        email["msg_id"],
+                            "subject":       email["subject"],
+                            "sender":        email["sender"],
+                            "date":          email["date"],
+                            "attachment_id": att["attachment_id"],
+                            "filename":      att["filename"],
+                            "mime_type":     att["mime_type"],
+                            "size_bytes":    att["size_bytes"],
+                            "confidence":    conf,
+                        })
+
+            st.session_state["gmail_candidates"]    = candidates
+            st.session_state["gmail_all_imported"]  = bool(all_emails) and not any_non_imported
+            label = f"Found {len(candidates)} candidate invoice(s) ✓"
+            status.update(label=label, state="complete")
+        st.rerun()
+
+    candidates    = st.session_state.get("gmail_candidates")
+    all_imported  = st.session_state.get("gmail_all_imported", False)
+
+    if candidates is None:
+        return
+
+    if not candidates:
+        if all_imported:
+            st.success("All invoice emails have already been imported.")
+        else:
+            st.info(
+                "No invoice emails found. All attachments have either been imported "
+                "already or were not recognised as invoices."
+            )
+        return
+
+    for i, card in enumerate(list(candidates)):
+        with st.container(border=True):
+            col_info, col_btn = st.columns([4, 1])
+            with col_info:
+                size_kb    = round(card["size_bytes"] / 1024, 1)
+                conf       = card["confidence"]
+                badge_color = "#16a34a" if conf >= 0.85 else "#d97706"
+                st.markdown(f"**{card['filename']}**")
+                st.caption(card["sender"])
+                st.caption(card["subject"][:60])
+                st.caption(f"{card['date']} · {size_kb} KB")
+                st.markdown(
+                    f'<span style="background:{badge_color}; color:white; padding:2px 8px; '
+                    f'border-radius:4px; font-size:0.73rem;">{int(conf * 100)}% confidence</span>',
+                    unsafe_allow_html=True,
+                )
+            with col_btn:
+                if st.button("Import", key=f"_gmail_import_{i}", use_container_width=True):
+                    _do_gmail_import(uid, card, service)
+
+
+def _do_gmail_import(uid: str, card: dict, service) -> None:
+    from services.gmail_scanner import download_attachment, label_email_processed
+
+    msg_id        = card["msg_id"]
+    attachment_id = card["attachment_id"]
+    filename      = card["filename"]
+    mime_type     = card["mime_type"]
+
+    st.toast("Importing from Gmail…")
+
+    try:
+        file_bytes = download_attachment(service, msg_id, attachment_id)
+    except Exception as exc:
+        st.error(f"Could not download attachment: {exc}")
+        return
+
+    creds = st.session_state.get("google_credentials")
+    try:
+        root_folder    = st.session_state.get("expenses_root_folder", "Expenses")
+        inbox_folder_id = _get_gmail_inbox_folder(creds, root_folder)
+        drive_id       = upload_file(creds, inbox_folder_id, filename, file_bytes, mime_type)
+    except Exception as exc:
+        st.error(f"Could not upload to Drive: {exc}")
+        return
+
+    try:
+        label_email_processed(service, msg_id)
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).warning("Could not label email %s: %s", msg_id, exc)
+
+    try:
+        save_gmail_import(uid, {
+            "msg_id":        msg_id,
+            "attachment_id": attachment_id,
+            "filename":      filename,
+            "subject":       card["subject"],
+            "sender":        card["sender"],
+            "drive_file_id": drive_id,
+            "invoice_id":    None,
+            "status":        "imported",
+        })
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).warning("Could not save gmail_import record: %s", exc)
+
+    remaining = [
+        c for c in st.session_state.get("gmail_candidates", [])
+        if not (c["msg_id"] == msg_id and c["attachment_id"] == attachment_id)
+    ]
+    st.session_state["gmail_candidates"] = remaining
+
+    st.session_state[_KEY_BYTES]   = file_bytes
+    st.session_state[_KEY_MIME]    = mime_type
+    st.session_state[_KEY_FNAME]   = filename
+    st.session_state[_KEY_DRIVEID] = drive_id
+
+    month, year = current_month_year()
+    thread_id   = str(uuid.uuid4())
+    config      = {"configurable": {"thread_id": thread_id}}
+
+    initial_state = {
+        "user_id":            uid,
+        "action":             "upload_invoice",
+        "month":              month,
+        "year":               year,
+        "invoices":           [{"id": drive_id, "name": filename, "mimeType": mime_type}],
+        "extracted_data":     [],
+        "current_file_index": 0,
+        "renamed_files":      [],
+        "anomaly_warnings":   [],
+        "error":              None,
+        "gmail_source":       True,
+        "gmail_msg_id":       msg_id,
+        "gmail_attachment_id": attachment_id,
+        "gmail_subject":      card["subject"],
+        "gmail_sender":       card["sender"],
+    }
+
+    with st.status("Extracting invoice data with GPT-4o…", expanded=True) as status:
+        try:
+            snapshot = graph.invoke(initial_state, config=config)
+            status.update(label="Extraction complete ✓", state="complete")
+        except Exception as exc:
+            status.update(label="Extraction failed", state="error")
+            st.error(f"Agent error during extraction: {exc}")
+            return
+
+    if snapshot.get("error"):
+        st.error(f"Extraction failed: {snapshot['error']}")
+        return
+
+    st.session_state[_KEY_THREAD] = thread_id
+    st.session_state[_KEY_SNAP]   = snapshot
+
+    if snapshot.get("pending_approval"):
+        st.session_state[_KEY_PHASE] = "hitl"
+    else:
+        st.session_state[_KEY_PHASE] = "done"
+
+    st.rerun()
+
+
+def _get_gmail_inbox_folder(creds, root_folder: str) -> str:
+    root_id = get_or_create_folder(creds, root_folder)
+    return get_or_create_folder(creds, "Inbox", parent_id=root_id)
 
 
 # ---------------------------------------------------------------------------

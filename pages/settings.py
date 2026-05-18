@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import streamlit as st
 
-from auth.firebase_auth import sign_out
+from auth.firebase_auth import get_google_sign_in_url, sign_out
 from services.firestore import get_ai_usage, get_total_ai_cost, save_categories, update_user_settings
 from utils.helpers      import CATEGORIES
 from utils.session      import get_uid, get_user_categories, set_user_categories
@@ -173,6 +173,73 @@ def render() -> None:
             st.dataframe(df[cols], use_container_width=True, hide_index=True)
     else:
         st.info("No AI usage recorded yet. Upload an invoice or use the Chat to get started.")
+
+    st.markdown("---")
+
+    # ---- Gmail Integration ----
+    st.subheader("Gmail Integration")
+    st.caption(
+        "Invoxa scans for unread emails with PDF or image attachments. "
+        "Processed emails are labelled `invoxa-processed` in Gmail and will not be scanned again."
+    )
+
+    creds           = st.session_state.get("google_credentials")
+    gmail_connected = st.session_state.get("gmail_authorized", False)
+
+    if gmail_connected:
+        st.markdown(
+            '<span style="background:#16a34a; color:white; padding:2px 10px; '
+            'border-radius:4px; font-size:0.8rem;">● Connected</span>',
+            unsafe_allow_html=True,
+        )
+    else:
+        st.markdown(
+            '<span style="background:#6b7280; color:white; padding:2px 10px; '
+            'border-radius:4px; font-size:0.8rem;">● Not connected</span>',
+            unsafe_allow_html=True,
+        )
+        st.caption("Your current session doesn't have Gmail access.")
+        sign_in_url = get_google_sign_in_url()
+        st.markdown(
+            f'<a href="{sign_in_url}" target="_self">'
+            '<button style="background:#4285F4; color:white; border:none; padding:8px 18px; '
+            'font-size:14px; border-radius:6px; cursor:pointer; margin-top:6px;">'
+            '🔗 Grant Gmail access</button></a>',
+            unsafe_allow_html=True,
+        )
+
+    st.markdown("")
+
+    if st.button("Clear import history", type="secondary", key="_gmail_clear_btn"):
+        st.session_state["_gmail_confirm_clear"] = True
+
+    if st.session_state.get("_gmail_confirm_clear"):
+        st.warning(
+            "This will remove all Gmail import records from Invoxa and remove the "
+            "`invoxa-processed` label from all emails — they will appear in future scans again."
+        )
+        col_yes, col_no = st.columns(2)
+        with col_yes:
+            if st.button("Yes, clear everything", type="primary", use_container_width=True, key="_gmail_clear_yes"):
+                from services.firestore import clear_gmail_imports
+                from services.gmail_scanner import get_gmail_service, remove_label_from_all
+                try:
+                    clear_gmail_imports(uid)
+                except Exception as exc:
+                    st.error(f"Could not clear Firestore records: {exc}")
+                if creds:
+                    try:
+                        remove_label_from_all(get_gmail_service(creds))
+                    except Exception:
+                        pass
+                st.session_state.pop("_gmail_confirm_clear", None)
+                st.session_state.pop("gmail_candidates", None)
+                st.success("Import history cleared.")
+                st.rerun()
+        with col_no:
+            if st.button("Cancel", use_container_width=True, key="_gmail_clear_no"):
+                st.session_state.pop("_gmail_confirm_clear", None)
+                st.rerun()
 
     st.markdown("---")
 

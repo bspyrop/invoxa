@@ -357,6 +357,57 @@ def get_total_ai_cost(uid: str) -> float:
 
 
 # ---------------------------------------------------------------------------
+# Gmail import tracking
+# ---------------------------------------------------------------------------
+
+def save_gmail_import(uid: str, record: Dict[str, Any]) -> None:
+    """Save a Gmail import record to users/{uid}/gmail_imports/{msg_id}_{attachment_id}."""
+    try:
+        doc_id         = f"{record['msg_id']}_{record['attachment_id']}"
+        record         = dict(record)
+        record["imported_at"] = firestore.SERVER_TIMESTAMP
+        _db().collection("users").document(uid).collection("gmail_imports").document(doc_id).set(record)
+    except Exception as exc:
+        logger.error("save_gmail_import(%s) failed: %s", uid, exc)
+        raise
+
+
+def is_already_imported(uid: str, msg_id: str, attachment_id: str) -> bool:
+    """Return True if this Gmail attachment has already been imported."""
+    try:
+        doc_id = f"{msg_id}_{attachment_id}"
+        doc    = (
+            _db()
+            .collection("users")
+            .document(uid)
+            .collection("gmail_imports")
+            .document(doc_id)
+            .get()
+        )
+        return doc.exists
+    except Exception as exc:
+        logger.error("is_already_imported(%s) failed: %s", uid, exc)
+        return False
+
+
+def clear_gmail_imports(uid: str) -> None:
+    """Delete all Gmail import records for a user."""
+    try:
+        docs = (
+            _db()
+            .collection("users")
+            .document(uid)
+            .collection("gmail_imports")
+            .stream()
+        )
+        for doc in docs:
+            doc.reference.delete()
+    except Exception as exc:
+        logger.error("clear_gmail_imports(%s) failed: %s", uid, exc)
+        raise
+
+
+# ---------------------------------------------------------------------------
 # Error / activity logging
 # ---------------------------------------------------------------------------
 

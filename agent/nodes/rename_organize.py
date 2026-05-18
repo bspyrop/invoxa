@@ -93,6 +93,9 @@ def rename_and_organize(state: AgentState) -> AgentState:
 
     if success:
         invoice["renamed_filename"] = filename
+        invoice["source"]           = "gmail" if state.get("gmail_source") else "manual"
+        invoice["gmail_subject"]    = state.get("gmail_subject")
+        invoice["gmail_sender"]     = state.get("gmail_sender")
         extracted[idx] = invoice  # type: ignore[index]
         renamed.append({"old_name": old_name, "new_name": filename, "drive_id": file_id})
         # Persist updated filename to Firestore

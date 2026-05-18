@@ -91,5 +91,12 @@ class AgentState(TypedDict, total=False):
     # ---- LangChain messages (managed by add_messages reducer) ----
     messages: Annotated[List[Any], add_messages]
 
+    # ---- Gmail import source (only present when invoice came from email) ----
+    gmail_source:        bool
+    gmail_msg_id:        Optional[str]
+    gmail_attachment_id: Optional[str]
+    gmail_subject:       Optional[str]
+    gmail_sender:        Optional[str]
+
     # ---- Error tracking ----
     error: Optional[str]

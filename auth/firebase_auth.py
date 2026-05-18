@@ -95,7 +95,14 @@ def get_google_sign_in_url() -> str:
     """
     client_id    = st.secrets["GOOGLE_CLIENT_ID"]
     redirect_uri = st.secrets["GOOGLE_REDIRECT_URI"]
-    scope        = "openid email profile https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/spreadsheets"
+    scope        = (
+        "openid email profile "
+        "https://www.googleapis.com/auth/drive "
+        "https://www.googleapis.com/auth/spreadsheets "
+        "https://www.googleapis.com/auth/gmail.readonly "
+        "https://www.googleapis.com/auth/gmail.labels "
+        "https://www.googleapis.com/auth/gmail.modify"
+    )
 
     url = (
         "https://accounts.google.com/o/oauth2/v2/auth"
@@ -249,6 +256,9 @@ def build_google_credentials_from_token(access_token: str, refresh_token: str):
             "profile",
             "https://www.googleapis.com/auth/drive",
             "https://www.googleapis.com/auth/spreadsheets",
+            "https://www.googleapis.com/auth/gmail.readonly",
+            "https://www.googleapis.com/auth/gmail.labels",
+            "https://www.googleapis.com/auth/gmail.modify",
         ],
     )
 
@@ -365,6 +375,10 @@ def _handle_oauth_callback(code: str) -> None:
         st.session_state["google_credentials"] = build_google_credentials_from_token(
             access_token, refresh_token
         )
+
+        # Record which scopes were actually granted so the UI can reflect them
+        granted_scope = tokens.get("scope", "")
+        st.session_state["gmail_authorized"] = "gmail" in granted_scope
 
         # Remove the code from the URL so a refresh doesn't re-trigger
         st.query_params.clear()

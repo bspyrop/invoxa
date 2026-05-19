@@ -98,5 +98,9 @@ class AgentState(TypedDict, total=False):
     gmail_subject:       Optional[str]
     gmail_sender:        Optional[str]
 
+    # ---- Line items (current invoice being processed) ----
+    line_items:         list[dict] | None
+    line_item_warnings: list[str] | None
+
     # ---- Error tracking ----
     error: Optional[str]

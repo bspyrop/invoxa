@@ -62,6 +62,69 @@ def update_user_settings(uid: str, settings: Dict[str, Any]) -> None:
 # Invoices
 # ---------------------------------------------------------------------------
 
+def save_invoice_with_line_items(
+    uid: str,
+    invoice_id: str,
+    data: Dict[str, Any],
+    line_items: List[Dict[str, Any]],
+) -> None:
+    """
+    Save invoice document and its line items atomically via a batch write.
+
+    Adds line_items_count and line_items_total summary fields to the main document.
+    Each line item is stored as a separate document under the line_items sub-collection.
+    """
+    import uuid as _uuid
+
+    try:
+        data = dict(data)
+        data["processed_at"]      = datetime.now(timezone.utc).isoformat()
+        data["line_items_count"]  = len(line_items)
+        data["line_items_total"]  = round(sum(item.get("line_total", 0) for item in line_items), 2)
+
+        db          = _db()
+        batch       = db.batch()
+        invoice_ref = db.collection("users").document(uid).collection("invoices").document(invoice_id)
+        batch.set(invoice_ref, data)
+
+        for item in line_items:
+            item_id  = str(_uuid.uuid4())
+            item_ref = invoice_ref.collection("line_items").document(item_id)
+            batch.set(item_ref, {
+                "item_id":      item_id,
+                "description":  item.get("description", ""),
+                "quantity":     float(item.get("quantity") or 1.0),
+                "unit":         item.get("unit", ""),
+                "unit_price":   float(item.get("unit_price") or 0.0),
+                "line_total":   float(item.get("line_total") or 0.0),
+                "tax_rate":     item.get("tax_rate"),
+                "tax_amount":   item.get("tax_amount"),
+                "extracted_at": firestore.SERVER_TIMESTAMP,
+            })
+
+        batch.commit()
+        _update_supplier_memory(uid, data)
+    except Exception as exc:
+        logger.error("save_invoice_with_line_items(%s, %s) failed: %s", uid, invoice_id, exc)
+
+
+def get_line_items(uid: str, invoice_id: str) -> List[Dict[str, Any]]:
+    """Return all line items for an invoice, ordered by line_total descending."""
+    try:
+        docs = (
+            _db()
+            .collection("users").document(uid)
+            .collection("invoices").document(invoice_id)
+            .collection("line_items")
+            .order_by("line_total", direction=firestore.Query.DESCENDING)
+            .stream()
+        )
+        return [d.to_dict() for d in docs]
+    except Exception as exc:
+        logger.error("get_line_items(%s, %s) failed: %s", uid, invoice_id, exc)
+        return []
+
+
 def save_invoice(uid: str, invoice_id: str, data: Dict[str, Any]) -> None:
     """
     Create or overwrite an invoice document under users/{uid}/invoices/.

@@ -20,7 +20,7 @@ from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_ex
 
 from agent.state import AgentState, InvoiceData
 from agent.prompts.extraction_prompt import build_extraction_messages
-from services.firestore import calc_ai_cost, log_ai_usage, log_error, save_invoice
+from services.firestore import calc_ai_cost, log_ai_usage, log_error, save_invoice_with_line_items
 from services.google_drive import download_file
 
 logger = logging.getLogger(__name__)
@@ -122,7 +122,7 @@ def _call_openai_extraction(client: OpenAI, image_b64: str, mime_type: str) -> T
     response = client.chat.completions.create(
         model=VISION_MODEL,
         messages=messages,  # type: ignore[arg-type]
-        max_tokens=800,
+        max_tokens=2000,
         temperature=0,
     )
     raw = response.choices[0].message.content or "{}"
@@ -145,7 +145,7 @@ def _call_openai_text_extraction(client: OpenAI, text: str) -> Tuple[Dict[str, A
             {"role": "system", "content": _build_system_prompt(categories)},
             {"role": "user",   "content": f"Extract invoice data from this text:\n\n{text}"},
         ],
-        max_tokens=800,
+        max_tokens=2000,
         temperature=0,
     )
     raw = response.choices[0].message.content or "{}"
@@ -188,6 +188,136 @@ def _extract_from_file(
 
 
 # ---------------------------------------------------------------------------
+# Line-item validation
+# ---------------------------------------------------------------------------
+
+def validate_line_items(
+    line_items: List[Dict[str, Any]],
+    invoice_total: float,
+    currency: str,
+) -> List[str]:
+    """
+    Validate extracted line items and return a list of warning strings.
+    Empty list means all valid. Warnings are informational — they do not block saving.
+    """
+    warnings: List[str] = []
+
+    for i, item in enumerate(line_items):
+        qty        = item.get("quantity", 0)
+        unit_price = item.get("unit_price", 0)
+        line_total = item.get("line_total", 0)
+
+        if (qty or 0) <= 0:
+            warnings.append(f"Item {i + 1}: quantity must be positive")
+
+        if (unit_price or 0) < 0:
+            warnings.append(f"Item {i + 1}: unit price cannot be negative")
+
+        expected = round((qty or 0) * (unit_price or 0), 2)
+        actual   = round(line_total or 0, 2)
+        if abs(expected - actual) > 0.01:
+            warnings.append(
+                f"Item {i + 1} '{item.get('description', '')}': "
+                f"line total {actual} ≠ qty × unit price {expected}"
+            )
+
+    if line_items and invoice_total:
+        items_sum = sum(item.get("line_total", 0) or 0 for item in line_items)
+        tolerance = max(0.10, invoice_total * 0.01)
+        if abs(items_sum - invoice_total) > tolerance:
+            warnings.append(
+                f"Line items sum ({items_sum:.2f} {currency}) differs "
+                f"from invoice total ({invoice_total:.2f} {currency})"
+            )
+
+    return warnings
+
+
+# ---------------------------------------------------------------------------
+# Line-items-only extraction (used by backfill utility)
+# ---------------------------------------------------------------------------
+
+def extract_line_items_only(
+    file_bytes: bytes,
+    mime_type: str,
+    api_key: Optional[str] = None,
+) -> List[Dict[str, Any]]:
+    """
+    Extract only line items from an invoice file.
+    Returns [] if the invoice has no individual line items.
+    Used for backfilling existing invoices — cheaper than a full re-extraction.
+    api_key may be passed directly (e.g. from a CLI script); falls back to st.secrets.
+    """
+    if api_key is None:
+        api_key = st.secrets.get("OPENAI_API_KEY", "")
+    client  = OpenAI(api_key=api_key)
+
+    prompt = (
+        "Extract the line items from this invoice.\n"
+        "Return ONLY a JSON array. No explanation. No markdown fences.\n\n"
+        "[\n"
+        '  {\n'
+        '    "description": "product or service name",\n'
+        '    "quantity":    1.0,\n'
+        '    "unit":        "unit or empty string",\n'
+        '    "unit_price":  0.00,\n'
+        '    "line_total":  0.00,\n'
+        '    "tax_rate":    null,\n'
+        '    "tax_amount":  null\n'
+        "  }\n"
+        "]\n\n"
+        "Return [] if there are no individual line items on this invoice.\n"
+        "Never fabricate items. Only extract what is visibly printed."
+    )
+
+    try:
+        images    = _bytes_to_base64_list(file_bytes, mime_type)
+        vision_m  = mime_type if mime_type.startswith("image/") else "image/jpeg"
+        image_b64 = images[0] if images else None
+
+        if image_b64:
+            response = client.chat.completions.create(
+                model=VISION_MODEL,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url":    f"data:{vision_m};base64,{image_b64}",
+                                    "detail": "high",
+                                },
+                            },
+                            {"type": "text", "text": prompt},
+                        ],
+                    }
+                ],
+                max_tokens=2000,
+                temperature=0,
+            )
+        else:
+            text = _pdf_to_text(file_bytes)
+            if not text:
+                return []
+            response = client.chat.completions.create(
+                model=VISION_MODEL,
+                messages=[{"role": "user", "content": f"{prompt}\n\nInvoice text:\n{text}"}],
+                max_tokens=2000,
+                temperature=0,
+            )
+
+        raw = response.choices[0].message.content or "[]"
+        raw = raw.strip().lstrip("```json").lstrip("```").rstrip("```").strip()
+        result = json.loads(raw)
+        return result if isinstance(result, list) else []
+
+    except Exception as exc:
+        logger.error("extract_line_items_only failed: %s", exc)
+        return []
+
+
+# ---------------------------------------------------------------------------
 # Node entry point
 # ---------------------------------------------------------------------------
 
@@ -220,7 +350,9 @@ def extract_invoice_data(state: AgentState) -> AgentState:
     api_key = st.secrets.get("OPENAI_API_KEY", "")
     client  = OpenAI(api_key=api_key)
 
-    extracted: List[InvoiceData] = []
+    extracted:       List[InvoiceData] = []
+    all_line_items:  List[Dict[str, Any]] = []
+    all_li_warnings: List[str] = []
 
     for drive_file in files:
         file_id   = drive_file.get("id", "")
@@ -245,7 +377,20 @@ def extract_invoice_data(state: AgentState) -> AgentState:
             cost = calc_ai_cost(VISION_MODEL, usage.prompt_tokens, usage.completion_tokens)
             log_ai_usage(uid, VISION_MODEL, "extract", usage.prompt_tokens, usage.completion_tokens, cost, file_id)
 
-        # Merge in Drive metadata
+        # Separate line items from header fields
+        line_items: List[Dict[str, Any]] = data.pop("line_items", []) or []
+        if not isinstance(line_items, list):
+            line_items = []
+
+        # Validate line items
+        li_warnings = validate_line_items(
+            line_items,
+            float(data.get("amount") or 0),
+            data.get("currency", "EUR"),
+        )
+        all_li_warnings.extend(li_warnings)
+
+        # Merge in Drive metadata and line-item summary counts
         invoice: InvoiceData = {
             **data,  # type: ignore[misc]
             "original_filename": filename,
@@ -253,16 +398,26 @@ def extract_invoice_data(state: AgentState) -> AgentState:
             "month":             month,
             "year":              year,
             "processed_at":      datetime.now(timezone.utc).isoformat(),
+            "line_items_count":  len(line_items),
+            "line_items_total":  round(sum(i.get("line_total", 0) or 0 for i in line_items), 2),
         }
 
-        # Persist to Firestore
-        save_invoice(uid, file_id, invoice)
+        # Persist invoice + line items atomically
+        save_invoice_with_line_items(uid, file_id, invoice, line_items)
 
         extracted.append(invoice)
-        logger.info("Extracted data for '%s': supplier=%s, amount=%s %s",
+        all_line_items = line_items  # keep last invoice's items for single-invoice HITL flow
+        logger.info("Extracted data for '%s': supplier=%s, amount=%s %s, line_items=%d",
                     filename,
                     data.get("supplier_name"),
                     data.get("amount"),
-                    data.get("currency"))
+                    data.get("currency"),
+                    len(line_items))
 
-    return {**state, "extracted_data": extracted, "error": None}
+    return {
+        **state,
+        "extracted_data":     extracted,
+        "line_items":         all_line_items if extracted else None,
+        "line_item_warnings": all_li_warnings if all_li_warnings else None,
+        "error":              None,
+    }

@@ -19,7 +19,18 @@ Return exactly this JSON structure:
   "tax_amount":      <numeric tax/VAT amount, or 0 if not applicable>,
   "tax_rate":        <numeric percentage e.g. 20 for 20%, or null if not shown>,
   "category":        "one of: {categories}",
-  "description":     "brief 1-sentence description of what was purchased"
+  "description":     "brief 1-sentence description of what was purchased",
+  "line_items": [
+    {{
+      "description": "product or service name",
+      "quantity":    1.0,
+      "unit":        "unit label or empty string",
+      "unit_price":  0.00,
+      "line_total":  0.00,
+      "tax_rate":    null,
+      "tax_amount":  null
+    }}
+  ]
 }}
 
 Rules:
@@ -29,6 +40,10 @@ Rules:
 - amount and tax_amount must always be numeric (float or int), never strings.
 - currency must be a valid 3-letter ISO code; default to "EUR" if not clearly visible.
 - category must be exactly one of the listed values.
+- For line_items: extract every line visible on the invoice; return [] if there are no individual \
+line items (e.g. a single-total receipt); do NOT fabricate items not shown on the invoice; \
+quantity must be a number never a string; line_total must equal quantity × unit_price; \
+set tax_rate and tax_amount to null at line level if not shown per line.
 - Do NOT include any text outside the JSON object."""
 
 

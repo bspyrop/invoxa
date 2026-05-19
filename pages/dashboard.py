@@ -6,11 +6,93 @@ from __future__ import annotations
 
 import streamlit as st
 
-from services.firestore import delete_invoice, get_invoices_for_month, get_recent_invoices, get_total_ai_cost
+from services.firestore import delete_invoice, get_invoices_for_month, get_line_items, get_recent_invoices, get_total_ai_cost
 from styles.apply_theme import apply_theme
 from styles.badges import badge
 from utils.helpers import MONTHS, compute_monthly_stats, current_month_year, format_amount, year_range
 from utils.session import get_uid
+
+
+def _save_edited_line_items(uid: str, invoice_id: str, rows: list) -> None:
+    """Overwrite the line_items sub-collection with the user-edited rows."""
+    import uuid as _uuid
+    from firebase_admin import firestore as _fs
+    from services.firestore import _db
+
+    db          = _db()
+    invoice_ref = db.collection("users").document(uid).collection("invoices").document(invoice_id)
+
+    # Delete existing items
+    for old_doc in invoice_ref.collection("line_items").stream():
+        old_doc.reference.delete()
+
+    # Write updated items
+    batch = db.batch()
+    total = 0.0
+    for row in rows:
+        item_id  = str(_uuid.uuid4())
+        item_ref = invoice_ref.collection("line_items").document(item_id)
+        line_total = float(row.get("line_total") or 0)
+        total += line_total
+        batch.set(item_ref, {
+            "item_id":      item_id,
+            "description":  str(row.get("description", "")),
+            "quantity":     float(row.get("quantity") or 1.0),
+            "unit":         str(row.get("unit") or ""),
+            "unit_price":   float(row.get("unit_price") or 0.0),
+            "line_total":   line_total,
+            "tax_rate":     row.get("tax_rate"),
+            "tax_amount":   row.get("tax_amount"),
+            "extracted_at": _fs.SERVER_TIMESTAMP,
+        })
+    batch.commit()
+
+    # Update summary fields on the parent document
+    invoice_ref.update({
+        "line_items_count": len(rows),
+        "line_items_total": round(total, 2),
+    })
+
+
+def _render_line_items_detail(uid: str, invoice_id: str, row_idx: int) -> None:
+    """Render editable line items table for a single invoice in the dashboard."""
+    import pandas as pd
+
+    if not invoice_id:
+        st.caption("No invoice ID available.")
+        return
+
+    line_items = get_line_items(uid, invoice_id)
+
+    if not line_items:
+        st.caption("No line items recorded for this invoice.")
+        return
+
+    df = pd.DataFrame(line_items)[
+        ["description", "quantity", "unit", "unit_price", "line_total"]
+    ]
+    edited_df = st.data_editor(
+        df,
+        use_container_width=True,
+        num_rows="dynamic",
+        column_config={
+            "description": st.column_config.TextColumn("Description", width="large"),
+            "quantity":    st.column_config.NumberColumn("Qty", format="%.2f", width="small"),
+            "unit":        st.column_config.TextColumn("Unit", width="small"),
+            "unit_price":  st.column_config.NumberColumn("Unit price", format="%.2f", width="small"),
+            "line_total":  st.column_config.NumberColumn("Total", format="%.2f", width="small"),
+        },
+        hide_index=True,
+        key=f"line_items_editor_{invoice_id}_{row_idx}",
+    )
+
+    if st.button("Save changes", type="primary", key=f"li_save_{invoice_id}_{row_idx}"):
+        try:
+            _save_edited_line_items(uid, invoice_id, edited_df.to_dict("records"))
+            st.success("Line items updated.")
+            st.rerun()
+        except Exception as exc:
+            st.error(f"Save failed: {exc}")
 
 
 def render() -> None:
@@ -129,6 +211,9 @@ def render() -> None:
                 renamed = inv.get("renamed_filename", "")
                 if renamed:
                     st.caption(f"✅ {renamed[:40]}")
+                with st.expander("Line items", expanded=False):
+                    _render_line_items_detail(uid, inv_id, idx)
+
                 if st.button(f"Delete — {supplier} ({inv_date})", key=f"del_{idx}"):
                     st.session_state["_pending_delete_id"] = inv_id
                     st.rerun()

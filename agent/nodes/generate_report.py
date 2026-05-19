@@ -12,9 +12,10 @@ import logging
 import streamlit as st
 
 from agent.state import AgentState
-from services.firestore import get_invoices_for_month, get_invoices_for_year, log_activity, log_error
+from services.firestore import get_invoices_for_month, get_invoices_for_year, get_line_items, log_activity, log_error
 from services.google_drive import get_or_create_folder, find_folder
 from services.google_sheets import (
+    generate_line_items_tab,
     generate_monthly_report as _sheet_monthly,
     generate_year_summary,
     get_or_create_spreadsheet,
@@ -95,6 +96,16 @@ def generate_report(state: AgentState) -> AgentState:
         generate_year_summary(creds, spreadsheet_id, year, yearly_invoices)
     except Exception as exc:
         logger.warning("Year summary tab failed (non-fatal): %s", exc)
+
+    # Write line items tab (skipped if no invoices have line items)
+    try:
+        generate_line_items_tab(
+            creds, spreadsheet_id, month, year, monthly_invoices,
+            get_line_items_fn=get_line_items,
+            uid=uid,
+        )
+    except Exception as exc:
+        logger.warning("Line items tab failed (non-fatal): %s", exc)
 
     report_url = get_spreadsheet_url(spreadsheet_id)
     log_activity(

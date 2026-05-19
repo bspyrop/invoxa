@@ -27,6 +27,11 @@ INVOICE_TABLE_HEADERS = [
     "Amount", "Tax", "Currency", "Invoice Number",
 ]
 
+LINE_ITEMS_TABLE_HEADERS = [
+    "Invoice Date", "Supplier", "Description",
+    "Qty", "Unit", "Unit price", "Line total", "Category",
+]
+
 
 def _sheets_service(creds: Credentials):
     """Build and return an authenticated Sheets v4 service client."""
@@ -344,6 +349,55 @@ def generate_monthly_report(
     format_header_row(creds, spreadsheet_id, sheet_id, len(INVOICE_TABLE_HEADERS))
     # Remove the blank Sheet1 now that we have at least one real tab
     remove_sheet1_if_present(creds, spreadsheet_id)
+
+
+def generate_line_items_tab(
+    creds: Credentials,
+    spreadsheet_id: str,
+    month: str,
+    year: str,
+    invoices: List[Dict[str, Any]],
+    get_line_items_fn,
+    uid: str,
+) -> None:
+    """
+    Create or overwrite a 'Line Items' tab with one row per line item across
+    all invoices in the month. Skipped entirely if no invoices have line items.
+    """
+    invoices_with_items = [inv for inv in invoices if (inv.get("line_items_count") or 0) > 0]
+    if not invoices_with_items:
+        return
+
+    tab_title = "Line Items"
+    existing  = get_existing_sheets(creds, spreadsheet_id)
+    if tab_title in existing:
+        clear_sheet(creds, spreadsheet_id, tab_title)
+        sheet_id = existing[tab_title]
+    else:
+        sheet_id = add_sheet(creds, spreadsheet_id, tab_title)
+
+    rows: List[List[Any]] = [LINE_ITEMS_TABLE_HEADERS]
+    for inv in invoices_with_items:
+        inv_id   = inv.get("drive_file_id", "")
+        inv_date = inv.get("invoice_date", "")
+        supplier = inv.get("supplier_name", "")
+        category = inv.get("category", "")
+
+        items = get_line_items_fn(uid, inv_id)
+        for item in items:
+            rows.append([
+                inv_date,
+                supplier,
+                item.get("description", ""),
+                item.get("quantity", 1),
+                item.get("unit", ""),
+                item.get("unit_price", 0),
+                item.get("line_total", 0),
+                category,
+            ])
+
+    write_values(creds, spreadsheet_id, f"{tab_title}!A1", rows)
+    format_header_row(creds, spreadsheet_id, sheet_id, len(LINE_ITEMS_TABLE_HEADERS))
 
 
 def generate_year_summary(

@@ -38,6 +38,41 @@ _KEY_SNAP    = "_inv_snapshot"   # state dict returned by graph.invoke
 _KEY_DRIVEID = "_inv_drive_id"   # Drive file ID of the uploaded temp file
 
 
+def _render_line_items_review(line_items: list, invoice_total: float = 0.0) -> None:
+    """Render extracted line items as a read-only table inside the HITL review form."""
+    if not line_items:
+        st.caption("No line items extracted — invoice appears to be a single-total receipt.")
+        return
+
+    st.markdown("**Line items extracted**")
+    st.caption(f"{len(line_items)} item(s) found")
+
+    cols = st.columns([4, 1, 1, 1])
+    cols[0].markdown("**Description**")
+    cols[1].markdown("**Qty**")
+    cols[2].markdown("**Unit price**")
+    cols[3].markdown("**Total**")
+    st.markdown(
+        '<hr style="border:none;border-top:0.5px solid #E2E6EF;margin:4px 0 8px">',
+        unsafe_allow_html=True,
+    )
+    for item in line_items:
+        cols = st.columns([4, 1, 1, 1])
+        unit_label = f"{item.get('quantity', 1):.0f} {item.get('unit', '')}".strip()
+        cols[0].write(item.get("description", "—"))
+        cols[1].write(unit_label)
+        cols[2].write(f"{item.get('unit_price', 0):.2f}")
+        cols[3].write(f"{item.get('line_total', 0):.2f}")
+
+    if invoice_total:
+        items_sum = sum(i.get("line_total", 0) or 0 for i in line_items)
+        if abs(items_sum - invoice_total) > 0.10:
+            st.warning(
+                f"Line items sum ({items_sum:.2f}) differs from invoice total "
+                f"({invoice_total:.2f}). Please verify the total field."
+            )
+
+
 def render() -> None:
     apply_theme()
     uid   = get_uid()
@@ -394,10 +429,12 @@ def _get_gmail_inbox_folder(creds, root_folder: str) -> str:
 def _render_hitl(uid: str) -> None:
     import base64
 
-    snap       = st.session_state.get(_KEY_SNAP, {})
-    extracted  = snap.get("extracted_data", [])
-    invoice    = extracted[0] if extracted else {}
-    suggested  = snap.get("suggested_filename", "invoice.pdf")
+    snap         = st.session_state.get(_KEY_SNAP, {})
+    extracted    = snap.get("extracted_data", [])
+    invoice      = extracted[0] if extracted else {}
+    suggested    = snap.get("suggested_filename", "invoice.pdf")
+    line_items   = snap.get("line_items") or []
+    li_warnings  = snap.get("line_item_warnings") or []
     file_bytes = st.session_state.get(_KEY_BYTES)
     mime_type  = st.session_state.get(_KEY_MIME, "application/pdf")
 
@@ -438,6 +475,11 @@ def _render_hitl(uid: str) -> None:
                 format="%.2f",
             )
             description = st.text_input("Description", value=str(invoice.get("description") or ""))
+
+            st.markdown("---")
+            _render_line_items_review(line_items, float(invoice.get("amount") or 0))
+            for w in li_warnings:
+                st.warning(w)
 
             st.markdown("---")
             st.caption("The file will be saved with this name inside the correct month folder.")

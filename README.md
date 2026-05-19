@@ -2,7 +2,7 @@
 
 **Course Assignment Submission**
 **Project:** AI-powered Expense Invoice Productivity Agent
-**Stack:** Streamlit · LangGraph · GPT-4o · Firebase · Google Drive · Google Sheets
+**Stack:** Streamlit · LangGraph · GPT-4o · Firebase · Google Drive · Google Sheets · ChromaDB
 
 > 📦 **Looking to run the project?** See the [Setup & Installation Guide](SETUP.md).
 
@@ -135,15 +135,31 @@ The Monthly Report page also renders inline charts:
 - Top 5 suppliers bar chart
 - Month-over-month line chart for the selected year
 
-### 2.6 Expense Chat
+### 2.6 Expense Chat with RAG
 
-The `chat_with_expenses` node provides a natural language interface:
-- Loads all invoices and suppliers from Firestore into the system prompt context
-- Uses GPT-4o-mini for cost efficiency
+The `chat_with_expenses` node provides a natural language interface powered by a hybrid retrieval strategy:
+
+**Hybrid context strategy:**
+- **≤ 50 invoices** — full-context injection: all invoice fields, supplier data, and line items are loaded directly into the system prompt
+- **> 50 invoices** — semantic RAG: a ChromaDB vector index is queried for the 8 most relevant chunks, keeping the prompt focused and cost-efficient
+
+**ChromaDB vector index:**
+- Per-user collection (`invoices_{uid}`) stored on disk with cosine similarity (HNSW)
+- Embedding model: `text-embedding-3-small` (OpenAI, 1 536 dimensions)
+- Three chunk types per invoice: `header` (full metadata summary), `line_items` (product descriptions), `pointer` (lightweight, used for preview lookup)
+- Index is rebuilt automatically on cold-start (Streamlit Cloud restart) with a progress bar; manual rebuild available in Settings → Search Index
+
+**Invoice preview:**
+- Intent classifier (`gpt-4o-mini`, max 15 tokens) detects "show me / preview / open the X invoice" phrasing and short-circuits the LLM entirely
+- Semantic search over pointer chunks finds the best-matching invoice by supplier name, date, or invoice number
+- Renders a high-resolution thumbnail (fetched via Google Drive API + OAuth2) and an "Open in Google Drive" button directly in the chat thread
+- Preview card survives Streamlit reruns via session state
+
+**Other chat features:**
+- Uses `gpt-4o-mini` for cost efficiency; tenacity retry (3 attempts, exponential backoff)
 - Maintains a 20-turn conversation history
-- Answers questions like "What did I spend on travel this year?" or "Which supplier costs the most?"
-- Tax amounts, descriptions, and all invoice fields are included in context
-- **Clear Conversation** button resets the history in one click, starting a fresh context without reloading the page
+- Suggested question chips including product-level queries ("What did I buy from Amazon?") and preview prompts ("Show me the latest invoice")
+- **Clear Conversation** button resets history in one click
 
 ### 2.7 Supplier Long-Term Memory
 
@@ -171,8 +187,8 @@ This memory powers anomaly detection (average amount calculation, recurring supp
 | 🏠 **Dashboard** | Quick stats, recent activity with delete and editable line items expander, category chart, AI cost metric |
 | ⬆️ **Upload Invoice** | Full HITL pipeline (upload → extract → review → anomaly check → done) |
 | 📊 **Monthly Report** | Month/year selector, charts, generate/refresh Google Sheets report |
-| 💬 **Chat** | Expense Q&A with suggested question chips and conversation history |
-| ⚙️ **Settings** | Drive/Sheets config, currency, category management, AI cost monitoring, account |
+| 💬 **Chat** | Expense Q&A with RAG, invoice preview cards, suggested question chips, and conversation history |
+| ⚙️ **Settings** | Drive/Sheets config, currency, category management, AI cost monitoring, search index health, account |
 
 ### Dashboard Header
 - Invoxa logo (emoji + name + tagline) on the left
@@ -227,7 +243,9 @@ Streamlit (UI) ──► graph.invoke() ──► LangGraph Pipeline
 |---|---|---|---|
 | `gpt-4o` | extract_invoice_data | temp=0, max_tokens=2000 | Invoice vision extraction + line items |
 | `gpt-4o-mini` | chat_with_expenses | temp=0.3, max_tokens=1024 | Expense Q&A |
+| `gpt-4o-mini` | query_router | temp=0, max_tokens=15 | Chat intent classification (preview / search / general) |
 | `gpt-4o-mini` | classify_email | temp=0, max_tokens=60 | Gmail invoice classification |
+| `text-embedding-3-small` | chroma_service | — | Invoice chunk embeddings for semantic search |
 
 ### Memory
 
@@ -241,6 +259,12 @@ Streamlit (UI) ──► graph.invoke() ──► LangGraph Pipeline
 - `users/{uid}/suppliers/` — cumulative supplier spend/count memory
 - `users/{uid}/ai_usage/` — per-call token and cost logs
 - `users/{uid}/` profile — settings, categories, running AI cost total
+
+**Vector index (ChromaDB — local disk):**
+- Path: `chroma_db/` (excluded from git)
+- Collection `invoices_{uid}` — per-user, cosine similarity
+- Chunks: `header` + `line_items` + `pointer` per invoice; upsert-safe
+- Rebuilt automatically on cold start; CLI backfill via `utils/backfill_chroma.py`
 
 ### Error Handling
 
@@ -329,6 +353,7 @@ Then open the **LangGraph Studio** desktop app and connect to `http://localhost:
 | pandas | ≥2.2.0 | Data tables and charts |
 | tenacity | ≥8.3.0 | Retry with exponential backoff |
 | Pillow | ≥10.3.0 | Image processing |
+| chromadb | ≥0.5.0 | Local vector store for semantic invoice search |
 
 ---
 
@@ -392,6 +417,21 @@ langgraph dev  # then open LangGraph Studio app → http://localhost:2024
    - "Which supplier costs the most?"
    - "Show me all invoices over €500 in February"
    - "What did I spend on software subscriptions?"
+   - "What did I buy from Amazon?" *(searches line items via RAG)*
+   - "Which invoice had an EC2 charge?" *(semantic product search)*
+
+**Preview an invoice from the chat:**
+1. Open Chat page
+2. Type a preview request, e.g. "Show me the KORA invoice" or "Preview the Anthropic invoice"
+3. The agent finds the invoice semantically (no exact name needed), displays a high-resolution thumbnail, and provides a direct link to open it in Google Drive
+
+**Backfill the ChromaDB index for existing invoices:**
+```bash
+python utils/backfill_chroma.py --uid <firebase_uid>           # index new invoices only
+python utils/backfill_chroma.py --uid <firebase_uid> --reset   # drop and re-index everything
+python utils/backfill_chroma.py --uid <firebase_uid> --dry-run # preview without writing
+```
+Standalone CLI — no Streamlit required. Reads invoices and line items directly from Firestore.
 
 **Backfill line items for existing invoices:**
 ```bash
@@ -417,7 +457,10 @@ Standalone CLI — no Streamlit required. Handles its own Google OAuth2 flow (op
 | **GPT-4o for extraction, GPT-4o-mini for chat** | Vision capability needed for extraction; mini sufficient for chat at lower cost |
 | **PyMuPDF over pdf2image** | No external poppler dependency, faster, works on all platforms |
 | **Firestore over SQL** | Schema-free suits variable invoice fields; Firebase Admin SDK included in Firebase Auth stack |
-| **Full context injection for chat** | Simpler than RAG for current scale (<200 invoices); revisit with vector store when volume grows |
+| **Hybrid RAG (full-context ≤50, ChromaDB >50)** | Full context is cheaper and more accurate at low volume; RAG keeps prompts focused and cost-efficient at scale |
+| **ChromaDB PersistentClient over hosted vector DBs** | Zero additional infrastructure; on-disk index survives restarts and is rebuilt automatically from Firestore on cold start |
+| **text-embedding-3-small for embeddings** | Best cost/quality ratio at $0.02/1M tokens; 1 536 dims sufficient for invoice text |
+| **Pointer chunks for preview lookup** | Lightweight chunk type separates preview intent from content retrieval, avoiding full invoice text in preview searches |
 | **difflib for duplicate detection** | Built-in Python, no extra dependency; handles OCR variations and abbreviations |
 | **Category stored per-user in Firestore** | Users have different business domains; hardcoded defaults ship with sensible defaults |
 | **tomllib for LangSmith env setup** | LangGraph graph is built at module import time — must set env vars before any import |
@@ -445,6 +488,7 @@ Standalone CLI — no Streamlit required. Handles its own Google OAuth2 flow (op
 |---|---|---|
 | **Add LLM observability tool** | ✅ | LangSmith integrated with EU region endpoint; `langgraph.json` for LangGraph Studio |
 | **Implement agent that integrates with external data sources** | ✅ | Agent reads Google Drive (file storage), Google Sheets (reporting), Firestore (memory) — three external integrations in a unified pipeline |
+| **Implement RAG for scalable chat** | ✅ | ChromaDB vector index with `text-embedding-3-small`; hybrid strategy (full-context ≤50 invoices, semantic RAG above); invoice preview via pointer chunks |
 
 ---
 

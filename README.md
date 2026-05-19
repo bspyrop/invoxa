@@ -56,6 +56,7 @@ The Upload Invoice page has two entry points — manual file upload and Gmail in
    - Supplier name, invoice number, invoice date (YYYY-MM-DD)
    - Total amount, currency (ISO code), tax amount, tax rate
    - Category (from user-defined list), description
+   - **Line items array** — every line on the invoice: description, quantity, unit, unit price, line total (returns `[]` for single-total receipts with no itemised breakdown)
 
 **PDF Processing strategy (cascading fallback):**
 - PyMuPDF → converts pages to 2× zoom JPEG (preferred, no external dependencies)
@@ -84,6 +85,7 @@ After extraction the graph pauses via `interrupt_before=["rename_and_organize"]`
 - Edit any extracted field (supplier, date, amount, tax, currency, description)
 - Select or create a new category on the fly
 - Customise the suggested filename
+- Review extracted **line items** in a read-only table (description, qty, unit price, line total); a warning is shown if the items sum differs from the invoice total by more than 1%
 - Confirm (resumes graph) or Cancel (deletes Drive file + Firestore record)
 
 The right column shows a live **document preview** alongside the form: images render with `st.image`, PDFs are embedded via a base64 `<iframe>` — so the user can cross-check extracted fields against the original document without switching tabs.
@@ -124,6 +126,7 @@ After HITL approval, the `rename_and_organize` node:
 The `generate_report` node creates or refreshes a Google Sheets spreadsheet:
 - **Monthly tab** — full invoice table with category, supplier, amounts, tax
 - **Year Summary tab** — cross-month totals grouped by month
+- **Line Items tab** — one row per line item across all invoices in the month (skipped if no invoices have itemised lines); columns: Invoice Date, Supplier, Description, Qty, Unit, Unit price, Line total, Category
 - The spreadsheet is saved inside the `Expenses/` Drive folder
 - Report URL is returned to the UI for a one-click "Open in Sheets" button
 
@@ -165,7 +168,7 @@ This memory powers anomaly detection (average amount calculation, recurring supp
 
 | Page | Purpose |
 |---|---|
-| 🏠 **Dashboard** | Quick stats, recent activity with delete, category chart, AI cost metric |
+| 🏠 **Dashboard** | Quick stats, recent activity with delete and editable line items expander, category chart, AI cost metric |
 | ⬆️ **Upload Invoice** | Full HITL pipeline (upload → extract → review → anomaly check → done) |
 | 📊 **Monthly Report** | Month/year selector, charts, generate/refresh Google Sheets report |
 | 💬 **Chat** | Expense Q&A with suggested question chips and conversation history |
@@ -222,7 +225,7 @@ Streamlit (UI) ──► graph.invoke() ──► LangGraph Pipeline
 
 | Model | Node | Settings | Purpose |
 |---|---|---|---|
-| `gpt-4o` | extract_invoice_data | temp=0, max_tokens=800 | Invoice vision extraction |
+| `gpt-4o` | extract_invoice_data | temp=0, max_tokens=2000 | Invoice vision extraction + line items |
 | `gpt-4o-mini` | chat_with_expenses | temp=0.3, max_tokens=1024 | Expense Q&A |
 | `gpt-4o-mini` | classify_email | temp=0, max_tokens=60 | Gmail invoice classification |
 
@@ -233,7 +236,8 @@ Streamlit (UI) ──► graph.invoke() ──► LangGraph Pipeline
 - `MemorySaver` — LangGraph checkpoint per `thread_id`, survives HITL interrupt/resume
 
 **Long-term (Firestore):**
-- `users/{uid}/invoices/` — all extracted invoice records
+- `users/{uid}/invoices/` — all extracted invoice records (includes `line_items_count` and `line_items_total` summary fields)
+- `users/{uid}/invoices/{id}/line_items/` — individual line item documents (description, qty, unit, unit price, line total, tax)
 - `users/{uid}/suppliers/` — cumulative supplier spend/count memory
 - `users/{uid}/ai_usage/` — per-call token and cost logs
 - `users/{uid}/` profile — settings, categories, running AI cost total
@@ -357,9 +361,16 @@ langgraph dev  # then open LangGraph Studio app → http://localhost:2024
 2. Drag and drop a PDF or image
 3. Wait for GPT-4o to extract data (~3–5 seconds)
 4. Review and edit any fields in the HITL form — the original document is previewed side by side
-5. Select or create a category
-6. Click Confirm — file is moved to `Expenses/March 2026/` in Drive
-7. If a duplicate is detected, choose Keep or Discard
+5. Check the extracted line items table; a warning appears if the items sum doesn't match the total
+6. Select or create a category
+7. Click Confirm — file is moved to `Expenses/March 2026/` in Drive; line items saved to Firestore sub-collection
+8. If a duplicate is detected, choose Keep or Discard
+
+**View or edit line items on an existing invoice:**
+1. Open Dashboard → Recent Activity
+2. Expand the **Line items** section on any invoice card
+3. Edit descriptions, quantities, or prices directly in the table
+4. Click **Save changes** — updates are written to Firestore immediately
 
 **Import invoices from Gmail:**
 1. Open Upload Invoice page → Check email tab
@@ -381,6 +392,12 @@ langgraph dev  # then open LangGraph Studio app → http://localhost:2024
    - "Which supplier costs the most?"
    - "Show me all invoices over €500 in February"
    - "What did I spend on software subscriptions?"
+
+**Backfill line items for existing invoices:**
+```bash
+python utils/backfill_line_items.py --uid <firebase_uid> [--dry-run]
+```
+Standalone CLI — no Streamlit required. Handles its own Google OAuth2 flow (opens a browser once, caches the token to `.backfill_token.json`). Skips invoices that already have `line_items_count > 0`.
 
 **Manage categories:**
 1. Open Settings → Category Labels

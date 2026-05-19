@@ -87,6 +87,7 @@ class AgentState(TypedDict, total=False):
     chat_history: List[Dict[str, str]]   # [{role, content}]
     user_query:   Optional[str]
     agent_response: Optional[str]
+    preview_result: Optional[Dict[str, Any]]   # invoice preview payload (Drive URLs + metadata)
 
     # ---- LangChain messages (managed by add_messages reducer) ----
     messages: Annotated[List[Any], add_messages]

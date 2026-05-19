@@ -106,6 +106,14 @@ def rename_and_organize(state: AgentState) -> AgentState:
             {"old_name": old_name, "new_name": filename, "drive_file_id": file_id},
         )
         logger.info("Renamed '%s' → '%s'", old_name, filename)
+
+        # Index into ChromaDB — non-blocking; Firestore is the source of truth
+        try:
+            from services.chroma_service import index_invoice as _chroma_index
+            _chroma_index(uid, invoice, state.get("line_items") or [])
+        except Exception as exc:
+            logger.warning("ChromaDB indexing failed for '%s': %s", file_id, exc)
+            log_error(uid, "chroma_index", str(exc), {"file_id": file_id})
     else:
         logger.warning("Rename failed for file_id=%s, old_name=%s", file_id, old_name)
         log_error(uid, "rename_and_organize", "Drive rename failed", {"file_id": file_id})

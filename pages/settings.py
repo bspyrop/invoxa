@@ -228,6 +228,61 @@ def render() -> None:
                     st.session_state.pop("_gmail_confirm_clear", None)
                     st.rerun()
 
+    # ---- Search Index ----
+    with st.expander("Search Index", expanded=False):
+        st.caption(
+            "Invoxa uses a local ChromaDB vector index for fast semantic search. "
+            "The index is rebuilt automatically on first use, but you can trigger a manual rebuild here."
+        )
+        try:
+            from services.chroma_service import get_collection_count, RAG_THRESHOLD
+            from services.firestore import get_all_invoices
+
+            invoice_count = len(get_all_invoices(uid))
+            chunk_count   = get_collection_count(uid)
+            expected_min  = invoice_count * 2  # at least header + pointer per invoice
+
+            si1, si2, si3 = st.columns(3)
+            si1.metric("Indexed chunks", chunk_count)
+            si2.metric("Invoices in Firestore", invoice_count)
+            si3.metric("RAG threshold", RAG_THRESHOLD)
+
+            if invoice_count == 0:
+                st.info("No invoices yet — nothing to index.")
+            elif chunk_count == 0:
+                st.warning("Index is empty. Click **Rebuild index** to populate it.")
+            elif chunk_count < expected_min:
+                st.warning(
+                    f"Index may be incomplete — {chunk_count} chunks for {invoice_count} invoices "
+                    f"(expected at least {expected_min}). Consider rebuilding."
+                )
+            else:
+                st.success(f"Index looks healthy — {chunk_count} chunks for {invoice_count} invoices.")
+
+            if invoice_count > 0:
+                if st.button("Rebuild index", type="primary", key="_chroma_rebuild_btn"):
+                    from services.chroma_service import get_chroma_client, rebuild_if_empty
+
+                    # Drop the existing collection so rebuild_if_empty re-indexes everything
+                    try:
+                        get_chroma_client().delete_collection(f"invoices_{uid}")
+                    except Exception:
+                        pass
+
+                    progress_bar = st.progress(0, text="Rebuilding search index…")
+
+                    def _on_progress(current: int, total: int) -> None:
+                        pct = int((current / total) * 100)
+                        progress_bar.progress(pct / 100, text=f"Indexing… {current}/{total}")
+
+                    rebuild_if_empty(uid, progress_callback=_on_progress)
+                    progress_bar.empty()
+                    st.success("Index rebuilt successfully.")
+                    st.rerun()
+
+        except Exception as exc:
+            st.warning(f"Search index unavailable: {exc}")
+
     # ---- Account ----
     with st.expander("Account", expanded=True):
         user = st.session_state.get("user", {})

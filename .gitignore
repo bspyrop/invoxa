@@ -43,3 +43,8 @@ logs/
 # Environment
 .env
 .env.local
+
+# ChromaDB local vector index
+chroma_db/
+# Backfill token cache
+.backfill_token.json

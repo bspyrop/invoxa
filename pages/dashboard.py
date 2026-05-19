@@ -227,6 +227,11 @@ def render() -> None:
                     if st.button("Yes, delete", key=f"confirm_{idx}", type="primary"):
                         try:
                             delete_invoice(uid, inv_id)
+                            try:
+                                from services.chroma_service import delete_invoice_chunks
+                                delete_invoice_chunks(uid, inv_id)
+                            except Exception:
+                                pass
                             st.session_state.pop("_pending_delete_id", None)
                             st.success("Invoice removed.")
                             st.rerun()

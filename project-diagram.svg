@@ -1,7 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 1400" font-family="'Segoe UI', system-ui, Arial, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 1420" font-family="'Segoe UI', system-ui, Arial, sans-serif">
 
   <!-- Background -->
-  <rect width="1500" height="1400" fill="#0f1117"/>
+  <rect width="1500" height="1420" fill="#0f1117"/>
   <defs>
     <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
       <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e2130" stroke-width="0.5"/>
@@ -37,11 +37,11 @@
       <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000" flood-opacity="0.5"/>
     </filter>
   </defs>
-  <rect width="1500" height="1400" fill="url(#grid)"/>
+  <rect width="1500" height="1420" fill="url(#grid)"/>
 
   <!-- Title -->
   <text x="750" y="40" text-anchor="middle" font-size="26" font-weight="700" fill="#ffffff" letter-spacing="1">Invoxa — Architecture (LangGraph with HITL ×2)</text>
-  <text x="750" y="62" text-anchor="middle" font-size="13" fill="#6b7280">Streamlit + LangGraph (graph.invoke) + GPT-4o + Firebase + Google Drive + Google Sheets</text>
+  <text x="750" y="62" text-anchor="middle" font-size="13" fill="#6b7280">Streamlit + LangGraph (graph.invoke) + GPT-4o + Firebase + Google Drive + Google Sheets + ChromaDB</text>
   <line x1="60" y1="74" x2="1440" y2="74" stroke="#1e2130" stroke-width="1.5"/>
 
   <!-- Layer labels -->
@@ -89,14 +89,14 @@
 
   <rect x="764" y="120" width="200" height="70" rx="8" fill="#172554" stroke="#3b82f6" stroke-width="1.5"/>
   <text x="864" y="139" text-anchor="middle" font-size="12" font-weight="700" fill="#93c5fd">💬 Chat</text>
-  <text x="864" y="154" text-anchor="middle" font-size="10" fill="#6b7280">Q&amp;A on expenses</text>
-  <text x="864" y="168" text-anchor="middle" font-size="10" fill="#6b7280">graph.invoke (chat)</text>
+  <text x="864" y="154" text-anchor="middle" font-size="10" fill="#6b7280">RAG · Preview · graph.invoke</text>
+  <text x="864" y="168" text-anchor="middle" font-size="10" fill="#a78bfa">ChromaDB · intent router</text>
   <text x="864" y="182" text-anchor="middle" font-size="10" fill="#4a9eff">No HITL — straight through</text>
 
   <rect x="980" y="120" width="175" height="70" rx="8" fill="#172554" stroke="#3b82f6" stroke-width="1.5"/>
   <text x="1067" y="139" text-anchor="middle" font-size="12" font-weight="700" fill="#93c5fd">⚙️ Settings</text>
   <text x="1067" y="154" text-anchor="middle" font-size="10" fill="#6b7280">Currency · folder name</text>
-  <text x="1067" y="168" text-anchor="middle" font-size="10" fill="#6b7280">Categories (Firestore)</text>
+  <text x="1067" y="168" text-anchor="middle" font-size="10" fill="#6b7280">Categories · Search index</text>
   <text x="1067" y="182" text-anchor="middle" font-size="10" fill="#4a9eff">No graph.invoke</text>
 
   <!-- Session state -->
@@ -105,8 +105,9 @@
   <text x="1183" y="122" font-size="10" fill="#6b7280">  google_credentials · user · uid</text>
   <text x="1183" y="136" font-size="10" fill="#6b7280">  current_page · default_currency</text>
   <text x="1183" y="150" font-size="10" fill="#6b7280">  expenses_root_folder · report_url</text>
-  <text x="1183" y="164" font-size="10" fill="#6b7280">  chat_history · user_categories</text>
-  <text x="1183" y="178" font-size="10" fill="#fbbf24">  _inv_phase: None|hitl|anomaly_hitl|done</text>
+  <text x="1183" y="157" font-size="10" fill="#6b7280">  chat_history · user_categories</text>
+  <text x="1183" y="169" font-size="10" fill="#a78bfa">  _pending_preview (invoice preview card)</text>
+  <text x="1183" y="181" font-size="10" fill="#fbbf24">  _inv_phase: None|hitl|anomaly_hitl|done</text>
 
   <!-- ══════════════════════════════════════
        ROW 2 — AUTH
@@ -250,26 +251,45 @@
   <text x="302" y="877" text-anchor="middle" font-size="10" fill="#9ca3af">Writes Google Sheets tabs (month + year summary) · Moves sheet to Expenses folder → END</text>
 
   <!-- ─── PATH C: chat (moved down) ─── -->
-  <rect x="572" y="808" width="500" height="88" rx="8" fill="#0a0614" stroke="#8b5cf6" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <rect x="572" y="808" width="500" height="190" rx="8" fill="#0a0614" stroke="#8b5cf6" stroke-width="1.5" stroke-dasharray="5,3"/>
   <text x="580" y="824" font-size="11" font-weight="700" fill="#c4b5fd">action = "chat"  (Chat page — straight through, no HITL)</text>
-  <rect x="588" y="830" width="460" height="58" rx="6" fill="#2d1f5e" stroke="#7c3aed" stroke-width="1.5"/>
-  <text x="818" y="849" text-anchor="middle" font-size="11" font-weight="700" fill="#c4b5fd">chat_with_expenses</text>
-  <text x="818" y="863" text-anchor="middle" font-size="10" fill="#9ca3af">Loads all invoices + suppliers from Firestore (long-term memory)</text>
-  <text x="818" y="877" text-anchor="middle" font-size="10" fill="#9ca3af">GPT-4o-mini · chat_history last 20 turns (short-term) → agent_response → END</text>
+  <rect x="588" y="830" width="460" height="160" rx="6" fill="#2d1f5e" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="818" y="848" text-anchor="middle" font-size="11" font-weight="700" fill="#c4b5fd">chat_with_expenses  (hybrid RAG + preview)</text>
+  <!-- Intent classifier -->
+  <rect x="598" y="854" width="212" height="26" rx="5" fill="#1a0f3a" stroke="#6d28d9" stroke-width="1"/>
+  <text x="704" y="866" text-anchor="middle" font-size="9" font-weight="700" fill="#a78bfa">① query_router.py — intent classifier</text>
+  <text x="704" y="876" text-anchor="middle" font-size="9" fill="#6b7280">gpt-4o-mini (15 tok) → preview / search / general</text>
+  <!-- Preview branch -->
+  <rect x="598" y="888" width="200" height="38" rx="5" fill="#0a0a1e" stroke="#4a9eff" stroke-width="1"/>
+  <text x="698" y="902" text-anchor="middle" font-size="9" font-weight="600" fill="#93c5fd">② preview intent</text>
+  <text x="698" y="914" text-anchor="middle" font-size="9" fill="#6b7280">ChromaDB pointer chunks → Drive</text>
+  <text x="698" y="924" text-anchor="middle" font-size="9" fill="#6b7280">thumbnail API → preview card</text>
+  <!-- RAG branch -->
+  <rect x="808" y="888" width="230" height="38" rx="5" fill="#1a0a2e" stroke="#a78bfa" stroke-width="1"/>
+  <text x="923" y="902" text-anchor="middle" font-size="9" font-weight="600" fill="#c4b5fd">③ search / general intent</text>
+  <text x="923" y="914" text-anchor="middle" font-size="9" fill="#6b7280">&gt;50 inv: ChromaDB RAG top-8 chunks</text>
+  <text x="923" y="924" text-anchor="middle" font-size="9" fill="#6b7280">≤50 inv: full-context from Firestore</text>
+  <!-- LLM call -->
+  <text x="818" y="944" text-anchor="middle" font-size="9" fill="#9ca3af">GPT-4o-mini · chat_history last 20 turns → agent_response → END</text>
+  <text x="818" y="957" text-anchor="middle" font-size="9" fill="#6b7280">text-embedding-3-small (embeddings) · cold-start ChromaDB rebuild on load</text>
+  <text x="818" y="970" text-anchor="middle" font-size="9" fill="#a78bfa">index: header + line_items + pointer chunks · upserted on rename_and_organize</text>
 
   <!-- ─── MEMORY sidebar inside agent (moved down) ─── -->
-  <rect x="1088" y="848" width="354" height="158" rx="8" fill="#111827" stroke="#374151" stroke-width="1.5"/>
-  <text x="1265" y="868" text-anchor="middle" font-size="12" font-weight="700" fill="#d1d5db">🧠  Memory</text>
-  <line x1="1096" y1="874" x2="1434" y2="874" stroke="#374151" stroke-width="0.8"/>
-  <text x="1096" y="890" font-size="10" font-weight="600" fill="#fbbf24">Short-term (RAM / session)</text>
-  <text x="1096" y="904" font-size="10" fill="#6b7280">MemorySaver — graph checkpoint per thread_id</text>
-  <text x="1096" y="918" font-size="10" fill="#6b7280">st.session_state chat_history (last 20 turns)</text>
-  <text x="1096" y="932" font-size="10" fill="#6b7280">_inv_phase / _inv_snap / _inv_thread (upload flow)</text>
-  <line x1="1096" y1="940" x2="1434" y2="940" stroke="#374151" stroke-width="0.5" stroke-dasharray="4,2"/>
-  <text x="1096" y="955" font-size="10" font-weight="600" fill="#4ecb71">Long-term (Firestore)</text>
-  <text x="1096" y="969" font-size="10" fill="#6b7280">users/{uid}/invoices/{drive_id}</text>
-  <text x="1096" y="983" font-size="10" fill="#6b7280">users/{uid}/suppliers/{name}  ← upserted on save</text>
-  <text x="1096" y="997" font-size="10" fill="#6b7280">Injected into chat + anomaly context every run</text>
+  <rect x="1088" y="826" width="354" height="184" rx="8" fill="#111827" stroke="#374151" stroke-width="1.5"/>
+  <text x="1265" y="846" text-anchor="middle" font-size="12" font-weight="700" fill="#d1d5db">🧠  Memory</text>
+  <line x1="1096" y1="852" x2="1434" y2="852" stroke="#374151" stroke-width="0.8"/>
+  <text x="1096" y="866" font-size="10" font-weight="600" fill="#fbbf24">Short-term (RAM / session)</text>
+  <text x="1096" y="879" font-size="10" fill="#6b7280">MemorySaver — graph checkpoint per thread_id</text>
+  <text x="1096" y="892" font-size="10" fill="#6b7280">st.session_state chat_history (last 20 turns)</text>
+  <text x="1096" y="905" font-size="10" fill="#6b7280">_inv_phase / _inv_snap / _inv_thread (upload flow)</text>
+  <line x1="1096" y1="913" x2="1434" y2="913" stroke="#374151" stroke-width="0.5" stroke-dasharray="4,2"/>
+  <text x="1096" y="927" font-size="10" font-weight="600" fill="#4ecb71">Long-term (Firestore)</text>
+  <text x="1096" y="940" font-size="10" fill="#6b7280">users/{uid}/invoices/{drive_id}</text>
+  <text x="1096" y="953" font-size="10" fill="#6b7280">users/{uid}/suppliers/{name}  ← upserted on save</text>
+  <text x="1096" y="966" font-size="10" fill="#6b7280">Injected into chat + anomaly context every run</text>
+  <line x1="1096" y1="974" x2="1434" y2="974" stroke="#374151" stroke-width="0.5" stroke-dasharray="4,2"/>
+  <text x="1096" y="988" font-size="10" font-weight="600" fill="#a78bfa">Vector index (ChromaDB — local disk)</text>
+  <text x="1096" y="1001" font-size="10" fill="#6b7280">invoices_{uid} · cosine · text-embedding-3-small</text>
 
   <!-- Path arrows from router -->
   <line x1="700" y1="416" x2="300" y2="448" stroke="#fbbf24" stroke-width="1.5" marker-end="url(#arrow-yellow)"/>
@@ -343,7 +363,7 @@
   <!-- ══════════════════════════════════════
        ROW 5 — EXTERNAL APIs
   ══════════════════════════════════════ -->
-  <rect x="40" y="1214" width="270" height="178" rx="10" fill="#1a0808" stroke="#dc2626" stroke-width="2" filter="url(#shadow)"/>
+  <rect x="40" y="1214" width="270" height="192" rx="10" fill="#1a0808" stroke="#dc2626" stroke-width="2" filter="url(#shadow)"/>
   <rect x="40" y="1214" width="270" height="26" rx="10" fill="#7f1d1d" opacity="0.6"/>
   <rect x="40" y="1228" width="270" height="10" rx="0" fill="#7f1d1d" opacity="0.6"/>
   <text x="175" y="1231" text-anchor="middle" font-size="12" font-weight="700" fill="#fecaca">🧠  OpenAI API</text>
@@ -351,14 +371,15 @@
   <text x="175" y="1264" text-anchor="middle" font-size="10" fill="#6b7280">Invoice image → JSON · temp=0 · 800 tok</text>
   <text x="175" y="1277" text-anchor="middle" font-size="10" fill="#6b7280">PyMuPDF → base64 JPEG (fallback PyPDF2)</text>
   <line x1="48" y1="1285" x2="302" y2="1285" stroke="#374151" stroke-width="0.5"/>
-  <text x="175" y="1298" text-anchor="middle" font-size="10" font-weight="600" fill="#f87171">GPT-4o-mini — chat_with_expenses</text>
-  <text x="175" y="1311" text-anchor="middle" font-size="10" fill="#6b7280">All invoices + suppliers · temp=0.3 · 1024 tok</text>
+  <text x="175" y="1298" text-anchor="middle" font-size="10" font-weight="600" fill="#f87171">GPT-4o-mini — chat + query_router</text>
+  <text x="175" y="1311" text-anchor="middle" font-size="10" fill="#6b7280">chat: temp=0.3 · 1024 tok · last 20 turns</text>
   <line x1="48" y1="1320" x2="302" y2="1320" stroke="#374151" stroke-width="0.5"/>
-  <text x="175" y="1333" text-anchor="middle" font-size="10" font-weight="600" fill="#2dd4bf">GPT-4o-mini — classify_email</text>
-  <text x="175" y="1346" text-anchor="middle" font-size="10" fill="#6b7280">subject + sender + filenames</text>
-  <text x="175" y="1359" text-anchor="middle" font-size="10" fill="#6b7280">temp=0 · 60 tok · conf ≥ 0.65</text>
-  <text x="175" y="1372" text-anchor="middle" font-size="10" fill="#6b7280">agent/nodes/classify_email.py</text>
-  <text x="175" y="1385" text-anchor="middle" font-size="10" fill="#6b7280">cost logged to Firestore ai_usage</text>
+  <text x="175" y="1333" text-anchor="middle" font-size="10" font-weight="600" fill="#a78bfa">text-embedding-3-small — chroma_service</text>
+  <text x="175" y="1346" text-anchor="middle" font-size="10" fill="#6b7280">invoice chunks · 1536 dims · $0.02/1M tok</text>
+  <line x1="48" y1="1354" x2="302" y2="1354" stroke="#374151" stroke-width="0.5"/>
+  <text x="175" y="1367" text-anchor="middle" font-size="10" font-weight="600" fill="#2dd4bf">GPT-4o-mini — classify_email</text>
+  <text x="175" y="1380" text-anchor="middle" font-size="10" fill="#6b7280">temp=0 · 60 tok · conf ≥ 0.65</text>
+  <text x="175" y="1393" text-anchor="middle" font-size="10" fill="#6b7280">cost logged to Firestore ai_usage</text>
 
   <rect x="326" y="1214" width="270" height="178" rx="10" fill="#0a1628" stroke="#3b82f6" stroke-width="2" filter="url(#shadow)"/>
   <rect x="326" y="1214" width="270" height="26" rx="10" fill="#1d4ed8" opacity="0.5"/>

@@ -8,6 +8,25 @@
 
 ---
 
+## Overview
+
+Invoxa is an AI-powered expense management agent that automates the
+complete lifecycle of business invoice processing — from upload through
+extraction, review, organisation, anomaly detection, and reporting.
+It solves the problem of slow, error-prone manual invoice handling by
+using GPT-4o vision to extract structured data from any PDF or image,
+automatically organise files in Google Drive, detect duplicates and
+unusual charges, generate monthly reports in Google Sheets, and answer
+natural language questions about expenses through a conversational
+interface. The entire pipeline runs on LangGraph with Human-in-the-Loop
+(HITL) oversight at every critical decision point, ensuring that no AI
+decision is committed without explicit user approval. Invoxa is designed
+for freelancers, small business owners, and finance assistants who use
+Google Workspace and need intelligent invoice automation without the cost
+or complexity of enterprise accounting software.
+
+---
+
 ## Table of Contents
 
 1. [Agent Purpose](#1-agent-purpose)
@@ -16,6 +35,7 @@
 4. [Technical Implementation](#4-technical-implementation)
 5. [Documentation](#5-documentation)
 6. [Optional Tasks Completed](#6-optional-tasks-completed)
+7. [Ethics & Privacy](#7-ethics--privacy)
 
 ---
 
@@ -37,6 +57,46 @@ Managing business invoices manually is slow, error-prone, and hard to audit. Inv
 - Small business owners without a dedicated accounting team
 - Accountants or finance assistants processing high volumes of invoices
 - Anyone using Google Drive as their document management system
+
+### 1.4 Project Framing — SCR Framework
+
+**Situation**
+
+Small businesses, freelancers, and finance assistants process large
+volumes of invoices every month. Most use Google Drive or email to
+store invoice files and enter data manually into spreadsheets or
+accounting tools. For a typical small business receiving 30–100
+invoices per month, this process consumes several hours of work,
+is prone to data entry errors, and makes it difficult to answer
+basic questions like "how much did I spend on software this year?"
+without manually searching through files.
+
+**Complication**
+
+Existing solutions are either too expensive (enterprise accounting
+platforms like Xero or QuickBooks), too rigid (template-based OCR
+tools that fail on non-standard layouts), or require accounting
+expertise to operate. None of the affordable tools integrate
+naturally with Google Workspace — the most widely used document
+environment for small businesses — and none allow users to query
+their expense data conversationally. Meanwhile, AI models capable
+of reading invoices from any format have become available and
+affordable, but no accessible tool exists to combine them into a
+practical, end-to-end pipeline with appropriate human oversight.
+
+**Resolution**
+
+Invoxa combines GPT-4o vision extraction, LangGraph stateful
+orchestration, and Google Workspace integration into a single
+pipeline that automates the entire invoice workflow while keeping
+humans in control at every decision point. Users upload any invoice
+format (PDF, JPG, PNG), review the AI-extracted data in a structured
+form, and confirm before anything is saved — ensuring accuracy without
+sacrificing automation. The result is a tool that reduces invoice
+processing time from minutes per invoice to seconds, works with any
+invoice format from any supplier, integrates directly with the user's
+existing Google Drive and Sheets setup, and requires no accounting
+knowledge to operate.
 
 ---
 
@@ -489,6 +549,91 @@ Standalone CLI — no Streamlit required. Handles its own Google OAuth2 flow (op
 | **Add LLM observability tool** | ✅ | LangSmith integrated with EU region endpoint; `langgraph.json` for LangGraph Studio |
 | **Implement agent that integrates with external data sources** | ✅ | Agent reads Google Drive (file storage), Google Sheets (reporting), Firestore (memory) — three external integrations in a unified pipeline |
 | **Implement RAG for scalable chat** | ✅ | ChromaDB vector index with `text-embedding-3-small`; hybrid strategy (full-context ≤50 invoices, semantic RAG above); invoice preview via pointer chunks |
+
+---
+
+## 7. Ethics & Privacy
+
+### 7.1 Data Residency — Your Data Stays Yours
+
+Invoxa does not store, copy, or transmit invoice files to any
+Invoxa-controlled server. All invoice PDFs and images are stored
+exclusively in the **user's own Google Drive account** under a folder
+path they control (`Expenses/`). All structured invoice data
+(amounts, suppliers, dates) is stored in the **user's own Firebase
+project** under their authenticated user ID. The developer of Invoxa
+has no access to any user's financial data at any point.
+
+### 7.2 Third-Party Data Handling (OpenAI API)
+
+Invoice images and PDFs are sent to the **OpenAI API** for GPT-4o
+vision extraction. Users should be aware that:
+
+- OpenAI's API data usage policy applies: as of 2024, OpenAI does
+  not use API inputs/outputs to train models by default for paid
+  API customers.
+- Invoice content (supplier names, amounts, tax data) is transmitted
+  to OpenAI's servers during extraction. Users processing invoices
+  containing sensitive personal data (e.g. individual names, national
+  ID numbers) should review OpenAI's data processing agreement.
+- Invoxa uses `temperature=0` for extraction to minimise hallucination,
+  and every extracted field passes through a mandatory human review
+  screen before being saved. No AI output is committed to storage
+  without explicit user confirmation.
+
+**Recommendation:** Users in regulated industries (healthcare, legal,
+public sector) should review their obligations under GDPR or applicable
+data protection law before processing sensitive invoices through any
+third-party API.
+
+### 7.3 Human-in-the-Loop as an Ethical Design Choice
+
+The two HITL interrupt points in the Invoxa pipeline are not merely
+a UX convenience — they are a deliberate ethical design decision.
+
+Financial data carries real consequences: an incorrectly extracted
+amount, a missed duplicate, or a wrong category can affect accounting
+records, tax filings, and business decisions. Invoxa's design reflects
+the principle that **AI should augment human judgement, not replace it**
+in high-stakes financial workflows.
+
+Specifically:
+- **HITL 1** (after extraction): the user reviews and approves every
+  extracted field before any file is renamed or moved. GPT-4o's output
+  is treated as a suggestion, not a fact.
+- **HITL 2** (after anomaly detection): the user decides whether to
+  keep or discard flagged invoices. The agent raises concerns; the
+  human decides.
+
+This architecture ensures that the system fails safely: if the AI
+extracts incorrect data, the user catches it before it enters any
+permanent record.
+
+### 7.4 Financial Data Sensitivity
+
+Invoice data processed by Invoxa may include commercially sensitive
+information: supplier relationships, pricing, volume, and payment
+terms. Users are responsible for:
+
+- Ensuring they have the right to process the invoices they upload
+  (e.g. as the invoice recipient or an authorised accountant)
+- Complying with any confidentiality obligations in supplier contracts
+- Not sharing their Invoxa demo credentials with parties who should
+  not have access to their financial data
+
+Invoxa does not implement role-based access control in the current
+version. Each authenticated Google account has access to all invoices
+processed under that account.
+
+### 7.5 Known Limitations and Honest Caveats
+
+| Limitation | Impact | Mitigation |
+|---|---|---|
+| GPT-4o may misread low-quality scans | Incorrect extracted fields | HITL review catches errors before save |
+| Duplicate detection uses fuzzy matching, not exact | May miss duplicates with very different formatting | HITL anomaly review gives user final decision |
+| Full invoice content sent to OpenAI | Privacy exposure for sensitive invoices | User is warned; HITL ensures no auto-save |
+| No automated tests in current version | Extraction accuracy unverified at scale | Manual testing on 20+ invoice types performed |
+| AI cost pricing hardcoded | Cost tracking may drift if OpenAI changes rates | Pricing table documented; update instructions in Settings |
 
 ---
 

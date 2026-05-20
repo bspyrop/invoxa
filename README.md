@@ -31,6 +31,43 @@ or complexity of enterprise accounting software.
 
 ---
 
+## Screenshots
+
+<table>
+  <tr>
+    <td width="50%" align="center">
+      <a href="screenshots/01-dashboard.png"><img src="screenshots/01-dashboard.png" width="100%"/></a>
+      <br/><sub>Dashboard — expense overview with metrics and recent activity</sub>
+    </td>
+    <td width="50%" align="center">
+      <a href="screenshots/02-hitl-review.png"><img src="screenshots/02-hitl-review.png" width="100%"/></a>
+      <br/><sub>HITL Review — extracted data form with live document preview</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">
+      <a href="screenshots/03-monthly-report.png"><img src="screenshots/03-monthly-report.png" width="100%"/></a>
+      <br/><sub>Monthly Report — summary metrics, invoice table, and charts</sub>
+    </td>
+    <td width="50%" align="center">
+      <a href="screenshots/04-chat-suggested.png"><img src="screenshots/04-chat-suggested.png" width="100%"/></a>
+      <br/><sub>Chat — suggested questions and natural language expense Q&A</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">
+      <a href="screenshots/05-chat-products.png"><img src="screenshots/05-chat-products.png" width="100%"/></a>
+      <br/><sub>Chat — product-level query answered from extracted line items</sub>
+    </td>
+    <td width="50%" align="center">
+      <a href="screenshots/06-settings.png"><img src="screenshots/06-settings.png" width="100%"/></a>
+      <br/><sub>Settings — integrations, categories, AI cost monitoring, and search index</sub>
+    </td>
+  </tr>
+</table>
+
+---
+
 ## Table of Contents
 
 1. [Agent Purpose](#1-agent-purpose)

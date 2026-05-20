@@ -2,7 +2,7 @@
 
 > ← Back to [Project Evaluation (README)](README.md)
 
-A Streamlit application that automates monthly expense management using LangGraph, GPT-4o, Google Drive, Google Sheets, and Firebase.
+A Streamlit application that automates monthly expense management using LangGraph, GPT-4o, Google Drive, Google Sheets, Gmail, and Firebase.
 
 ---
 
@@ -10,12 +10,15 @@ A Streamlit application that automates monthly expense management using LangGrap
 
 - **Google Sign-In** via Firebase Auth (OAuth2)
 - **Invoice extraction** — GPT-4o vision reads PDFs and images from Google Drive
+- **Gmail import** — scan your inbox for invoice attachments and import them directly into Drive
+- **Line item extraction** — GPT-4o pulls individual products, quantities, and unit prices from each invoice
 - **Human-in-the-loop** — review and edit every extracted field before renaming
 - **Smart file naming** — `AWS_Software_2025-03-15_150EUR.pdf`
 - **Google Sheets reports** — monthly tabs + year summary, auto-generated
 - **Anomaly detection** — duplicates, missing recurring suppliers, unusual amounts
-- **Chat interface** — ask questions about your expenses in plain English
-- **Long-term memory** — supplier history stored in Firestore
+- **Chat interface** — ask questions about your expenses in plain English; RAG search over product-level details
+- **Invoice preview** — "Show me the ACME invoice" returns a thumbnail + Google Drive link
+- **Long-term memory** — supplier history and invoice index stored in Firestore + ChromaDB
 
 ---
 
@@ -23,9 +26,9 @@ A Streamlit application that automates monthly expense management using LangGrap
 
 | Service | What you need |
 |---|---|
-| OpenAI | API key with GPT-4o access |
+| OpenAI | API key with GPT-4o and GPT-4o-mini access |
 | Firebase | Project with Auth (Google provider) + Firestore enabled |
-| Google Cloud | OAuth2 credentials + Drive API + Sheets API enabled |
+| Google Cloud | OAuth2 credentials + Drive API + Sheets API + Gmail API enabled |
 
 ---
 
@@ -65,6 +68,7 @@ pip install -r requirements.txt
 3. Enable these APIs:
    - Google Drive API
    - Google Sheets API
+   - Gmail API
 4. Go to **APIs & Services → Credentials → Create Credentials → OAuth 2.0 Client ID**.
 5. Application type: **Web application**.
 6. Add Authorised redirect URIs:
@@ -106,6 +110,17 @@ streamlit run app.py
 ```
 
 Visit `http://localhost:8501`.
+
+#### Backfill ChromaDB index (first run or after data migration)
+
+If you already have invoices in Firestore and need to populate the vector index:
+
+```bash
+python utils/backfill_chroma.py --uid <your-firebase-uid>
+# Options:
+#   --dry-run   preview what would be indexed without writing
+#   --reset     drop and rebuild the existing index from scratch
+```
 
 ---
 
@@ -163,16 +178,22 @@ invoxa/
 ├── services/
 │   ├── google_drive.py            Drive API wrapper
 │   ├── google_sheets.py           Sheets API wrapper
-│   └── firestore.py               Firestore read/write
+│   ├── firestore.py               Firestore read/write
+│   ├── gmail_service.py           Gmail API — scan inbox for invoice attachments
+│   ├── chroma_service.py          ChromaDB vector index (RAG)
+│   ├── query_router.py            Intent classifier (preview / search / general)
+│   └── invoice_preview.py        Find and return Drive preview metadata
 ├── pages/
 │   ├── dashboard.py
 │   ├── process_invoices.py
 │   ├── monthly_report.py
-│   ├── chat.py
-│   └── settings.py
-└── utils/
-    ├── session.py                 Session state helpers
-    └── helpers.py                 Shared utilities
+│   ├── chat.py                    Chat + RAG + invoice preview card
+│   └── settings.py                Settings + search index management
+├── utils/
+│   ├── session.py                 Session state helpers
+│   ├── helpers.py                 Shared utilities
+│   └── backfill_chroma.py         CLI — rebuild ChromaDB index from Firestore
+└── chroma_db/                     Local ChromaDB vector store (gitignored)
 ```
 
 ---
@@ -186,12 +207,16 @@ User → Streamlit UI
           │
           └── LangGraph Agent
                 ├── list_invoices     → Google Drive API
-                ├── extract_data      → GPT-4o (vision)
+                │                        └── Gmail API (optional inbox scan)
+                ├── extract_data      → GPT-4o vision + line item extraction
                 ├── suggest_filename  → deterministic
-                ├── rename_organize   → Google Drive API
+                ├── rename_organize   → Google Drive API → ChromaDB index
                 ├── check_anomalies   → Firestore
                 ├── generate_report   → Google Sheets API
-                └── chat              → GPT-4o-mini + Firestore context
+                └── chat              → intent router (gpt-4o-mini)
+                                           ├── preview  → Drive thumbnail + link
+                                           ├── search   → ChromaDB RAG (top-k)
+                                           └── general  → full context (≤50 inv.)
 ```
 
 ---

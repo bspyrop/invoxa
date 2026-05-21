@@ -245,14 +245,14 @@ def _run_chat(uid: str, query: str) -> None:
             result = graph.invoke(state, config=config)
 
         answer  = result.get("agent_response", "Sorry, I could not answer that.")
-        preview = result.get("preview_result")
-
         st.markdown(answer)
-        if preview is not None:
-            _render_preview_card(preview)
 
+    preview = result.get("preview_result")
     new_history = result.get("chat_history", history)
     st.session_state["chat_history"] = new_history
+
+    if preview is not None:
+        st.session_state["_pending_preview"] = preview
 
     if result.get("error"):
         st.error(result["error"])

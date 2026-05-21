@@ -71,10 +71,8 @@ def render() -> None:
         content = msg.get("content", "")
         with st.chat_message(role):
             st.markdown(content)
-
-    # ---- Pending preview card (survives rerun via session state) ----
-    if st.session_state.get("_pending_preview"):
-        _render_preview_card(st.session_state["_pending_preview"])
+        if msg.get("preview"):
+            _render_preview_card(msg["preview"])
 
     # ---- Input ----
     user_input = st.chat_input("Ask anything about your expenses…")
@@ -201,8 +199,6 @@ def _is_preview_query(query: str) -> bool:
 def _run_chat(uid: str, query: str) -> None:
     """Run the chat action via LangGraph and render the response."""
     history = get_chat_history()
-    # Clear any previous preview when a new message is sent
-    st.session_state.pop("_pending_preview", None)
 
     # ── Preview shortcut (bypass graph entirely) ──────────────────
     if _is_preview_query(query):
@@ -219,13 +215,14 @@ def _run_chat(uid: str, query: str) -> None:
                 f"— {preview['invoice_date']} — "
                 f"{float(preview['amount']):.2f} {preview['currency']}"
             )
-            st.session_state["_pending_preview"] = preview
+            assistant_msg = {"role": "assistant", "content": answer, "preview": preview}
         else:
             answer = "Could not find that invoice. Try including the supplier name or date."
+            assistant_msg = {"role": "assistant", "content": answer}
 
         new_history = history + [
-            {"role": "user",      "content": query},
-            {"role": "assistant", "content": answer},
+            {"role": "user", "content": query},
+            assistant_msg,
         ]
         st.session_state["chat_history"] = new_history
         st.rerun()
@@ -244,15 +241,18 @@ def _run_chat(uid: str, query: str) -> None:
         with st.spinner("Thinking…"):
             result = graph.invoke(state, config=config)
 
-        answer  = result.get("agent_response", "Sorry, I could not answer that.")
+        answer = result.get("agent_response", "Sorry, I could not answer that.")
         st.markdown(answer)
 
-    preview = result.get("preview_result")
+    preview     = result.get("preview_result")
     new_history = result.get("chat_history", history)
-    st.session_state["chat_history"] = new_history
 
-    if preview is not None:
-        st.session_state["_pending_preview"] = preview
+    if preview is not None and new_history and new_history[-1].get("role") == "assistant":
+        last = dict(new_history[-1])
+        last["preview"] = preview
+        new_history = new_history[:-1] + [last]
+
+    st.session_state["chat_history"] = new_history
 
     if result.get("error"):
         st.error(result["error"])
